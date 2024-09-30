@@ -26,18 +26,18 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printUid(args[0], cmd.Flag("style").Value.String(), wrap)
+		return printUid(args[0], cmd.Flag("style").Value.String(), wrap, cmd.Flag("raw").Changed)
 	},
 }
 
-func printUid(s, style string, width int) error {
+func printUid(s, style string, width int, raw bool) error {
 	uid, err := url.Parse(s)
 	if err != nil {
 		return err
 	}
 
 	opts := make([]glamour.TermRendererOption, 0)
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if !raw && isatty.IsTerminal(os.Stdout.Fd()) {
 		if width == 0 {
 			width, _, err = term.GetSize(int(os.Stdout.Fd()))
 			if err != nil {
@@ -69,6 +69,7 @@ func init() {
 		&cobra.Group{ID: "main", Title: "main commands"},
 	)
 
+	rootCmd.Flags().Bool("raw", false, "raw output")
 	rootCmd.Flags().String("style", "carapace", "style name or json path")
 	rootCmd.Flags().Int("wrap", 0, "word wrap")
 
