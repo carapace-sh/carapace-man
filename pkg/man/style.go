@@ -9,8 +9,6 @@ import (
 var CarapaceStyleConfig = ansi.StyleConfig{
 	Document: ansi.StyleBlock{
 		StylePrimitive: ansi.StylePrimitive{
-			BlockPrefix:     "\n",
-			BlockSuffix:     "\n",
 			Color:           stringPtr("#a9b1d6"),
 			BackgroundColor: stringPtr("#181825"),
 		},
