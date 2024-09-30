@@ -101,7 +101,7 @@ func Describe(uid *url.URL, opts ...glamour.TermRendererOption) (description str
 	if err == nil && len(opts) > 0 {
 		description, err = Style(description, opts...)
 	}
-	return strings.Trim(description, "\n"), err
+	return description, err
 }
 
 func Style(s string, opts ...glamour.TermRendererOption) (string, error) {
