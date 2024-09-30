@@ -99,13 +99,17 @@ func Describe(uid *url.URL, opts ...glamour.TermRendererOption) (description str
 		description, err = descibe(uid)
 	}
 	if err == nil && len(opts) > 0 {
-		r, err := glamour.NewTermRenderer(opts...)
-		if err != nil {
-			return "", err
-		}
-		description, err = r.Render(description)
+		description, err = Style(description, opts...)
 	}
 	return strings.Trim(description, "\n"), err
+}
+
+func Style(s string, opts ...glamour.TermRendererOption) (string, error) {
+	r, err := glamour.NewTermRenderer(opts...)
+	if err != nil {
+		return "", err
+	}
+	return r.Render(s)
 }
 
 func descibe(uid *url.URL) (string, error) {
@@ -122,6 +126,21 @@ func descibe(uid *url.URL) (string, error) {
 	var m map[string]string
 	if err := yaml.Unmarshal(content, &m); err != nil {
 		return "", err
+	}
+
+	description, ok := m[strings.TrimPrefix(uid.Path, "/")]
+	if !ok {
+		return "", nil
+	}
+
+	if strings.HasPrefix(description, "./") { // description is a path
+		path := fmt.Sprintf("%v/%v/%v/%v", location, uid.Scheme, uid.Host, strings.TrimPrefix(description, "./")) // TODO ensure path is within dir
+
+		content, err = os.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		return string(content), nil
 	}
 
 	return m[strings.TrimPrefix(uid.Path, "/")], nil // TODO return error for unknown?
