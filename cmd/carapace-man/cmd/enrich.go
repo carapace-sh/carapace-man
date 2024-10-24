@@ -12,7 +12,7 @@ var enrichCmd = &cobra.Command{
 	GroupID: "main",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return util.Enrich(args[1])
+		return util.Enrich(args[0])
 	},
 }
 

@@ -45,7 +45,7 @@ func enrich(command command.Command, prefix ...string) (*command.Command, error)
 	}
 
 	name := strings.Join(append(prefix, cobraCommand.Name()), " ")
-	client, err := ollama.NewClient("mistral")
+	client, err := ollama.NewClient("mistral-nemo")
 	if err != nil {
 		return nil, err
 	}
