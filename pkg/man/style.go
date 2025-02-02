@@ -95,6 +95,7 @@ var CarapaceStyleConfig = ansi.StyleConfig{
 		Color:           stringPtr("#7aa2f7"),
 		Underline:       boolPtr(true),
 		BackgroundColor: stringPtr("#181825"),
+		Format:          "\u0008", // skip link target and remove the space between LinkText and Link
 	},
 	LinkText: ansi.StylePrimitive{
 		Color:           stringPtr("#2ac3de"),
