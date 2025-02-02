@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jmorganca/ollama/api"
+	"github.com/ollama/ollama/api"
 )
 
 type Client struct {
