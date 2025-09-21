@@ -12,7 +12,7 @@ var splitCmd = &cobra.Command{
 	GroupID: "main",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return util.Split(args[1])
+		return util.Split(args[0])
 	},
 }
 
