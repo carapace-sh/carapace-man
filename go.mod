@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.23.4
 
 require (
-	github.com/carapace-sh/carapace v1.8.7
+	github.com/carapace-sh/carapace v1.10.3
 	github.com/carapace-sh/carapace-spec v1.0.5
 	github.com/charmbracelet/glamour v0.8.1-0.20250205005958-9ba12b6e631b
 	github.com/charmbracelet/lipgloss v1.0.0
@@ -21,7 +21,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/carapace-sh/carapace-shlex v1.1.0 // indirect
+	github.com/carapace-sh/carapace-shlex v1.1.1 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
