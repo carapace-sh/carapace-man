@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/carapace-sh/carapace v1.10.3
-	github.com/carapace-sh/carapace-spec v1.0.5
+	github.com/carapace-sh/carapace-spec v1.4.0
 	github.com/charmbracelet/glamour v0.8.1-0.20250205005958-9ba12b6e631b
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/jmorganca/ollama v0.1.30-rc4
