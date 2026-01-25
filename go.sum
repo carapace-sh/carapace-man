@@ -12,6 +12,8 @@ github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuP
 github.com/aymerick/douceur v0.2.0/go.mod h1:wlT5vV2O3h55X9m7iVYN0TBM0NH/MmbLnd30/FjWUq4=
 github.com/carapace-sh/carapace v1.10.3 h1:4L4HpEEZb+I2mtvqKMYed64QR15Tf6+uGDn8BIflObY=
 github.com/carapace-sh/carapace v1.10.3/go.mod h1:gdyqmVIQJFlcHn4D7BkgyjRU5LlluDXBaiRSdV6GY88=
+github.com/carapace-sh/carapace v1.11.0 h1:dTUFXvIrUTLd9BGLsfDt4wCgEyPl8bJeZOFDmN7fIfo=
+github.com/carapace-sh/carapace v1.11.0/go.mod h1:NVkuv1s8wyFvu7d98rdgYwqGKMB6GO1MEUZp5RcWri8=
 github.com/carapace-sh/carapace-pflag v1.0.0 h1:uJMhl+vwEM/Eb0UdxZUuv4jo4rUAyPijkRGP5gfCuCE=
 github.com/carapace-sh/carapace-pflag v1.0.0/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/carapace-sh/carapace-shlex v1.1.1 h1:ccmNeetAYZOk4IcV36youFDsXusT9uCNW2Njkw+QS+Q=
