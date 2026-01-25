@@ -3,7 +3,7 @@ module github.com/carapace-sh/carapace-man
 go 1.24.0
 
 require (
-	github.com/carapace-sh/carapace v1.10.3
+	github.com/carapace-sh/carapace v1.11.0
 	github.com/carapace-sh/carapace-spec v1.4.0
 	github.com/charmbracelet/glamour v0.10.0
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
