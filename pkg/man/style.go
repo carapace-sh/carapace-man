@@ -1,8 +1,8 @@
 package man
 
 import (
-	"github.com/charmbracelet/glamour/ansi"
-	"github.com/charmbracelet/glamour/styles"
+	"charm.land/glamour/v2/ansi"
+	"charm.land/glamour/v2/styles"
 )
 
 // CarapaceStyleConfig is the carapace style. (TODO: wip - based on tokyo-night and cattpuccin-mocha)
