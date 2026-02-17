@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"os"
 
+	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace"
 	action "github.com/carapace-sh/carapace-man/pkg/actions/man"
 	"github.com/carapace-sh/carapace-man/pkg/man"
 	spec "github.com/carapace-sh/carapace-spec"
-	"github.com/charmbracelet/glamour"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
