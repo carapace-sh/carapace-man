@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace/pkg/xdg"
-	"github.com/charmbracelet/glamour"
 	"gopkg.in/yaml.v3"
 )
 
