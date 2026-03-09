@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	charm.land/glamour/v2 v2.0.0-20260123212943-6014aa153a9b
 	charm.land/lipgloss/v2 v2.0.0
-	github.com/carapace-sh/carapace v1.11.1
+	github.com/carapace-sh/carapace v1.11.2
 	github.com/carapace-sh/carapace-spec v1.4.0
 	github.com/jmorganca/ollama v0.1.30-rc4
 	github.com/mattn/go-isatty v0.0.20
