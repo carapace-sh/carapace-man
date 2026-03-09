@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	charm.land/glamour/v2 v2.0.0
-	charm.land/lipgloss/v2 v2.0.0
+	charm.land/lipgloss/v2 v2.0.1
 	github.com/carapace-sh/carapace v1.11.2
 	github.com/carapace-sh/carapace-spec v1.4.0
 	github.com/jmorganca/ollama v0.1.30-rc4
@@ -45,7 +45,7 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.5 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
