@@ -1,9 +1,9 @@
 module github.com/carapace-sh/carapace-man
 
-go 1.24.2
+go 1.25.8
 
 require (
-	charm.land/glamour/v2 v2.0.0-20260123212943-6014aa153a9b
+	charm.land/glamour/v2 v2.0.0
 	charm.land/lipgloss/v2 v2.0.0
 	github.com/carapace-sh/carapace v1.11.1
 	github.com/carapace-sh/carapace-spec v1.4.0
