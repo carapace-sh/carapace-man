@@ -44,7 +44,7 @@ func ActionUids() carapace.Action {
 	}).Tag("uids") // TODO nospace should be implicit
 }
 
-func actionCmds() carapace.Action {
+func actionCmds() carapace.Action { // TODO include user specs
 	return carapace.ActionMultiPartsN("?", 2, func(c carapace.Context) carapace.Action {
 		switch len(c.Parts) {
 		case 0:
