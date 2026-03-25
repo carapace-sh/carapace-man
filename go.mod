@@ -6,7 +6,7 @@ require (
 	charm.land/glamour/v2 v2.0.0
 	charm.land/lipgloss/v2 v2.0.2
 	github.com/carapace-sh/carapace v1.11.2
-	github.com/carapace-sh/carapace-spec v1.4.0
+	github.com/carapace-sh/carapace-spec v1.5.1
 	github.com/jmorganca/ollama v0.1.30-rc4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/cobra v1.10.2
@@ -27,7 +27,6 @@ require (
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
-	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
@@ -50,6 +49,4 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
-replace github.com/spf13/pflag => github.com/carapace-sh/carapace-pflag v1.0.0
-
-replace github.com/carapace-sh/carapace-spec => ../carapace-spec/
+replace github.com/spf13/pflag => github.com/carapace-sh/carapace-pflag v1.1.0
