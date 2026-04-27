@@ -8,7 +8,7 @@ require (
 	github.com/carapace-sh/carapace v1.11.4
 	github.com/carapace-sh/carapace-spec v1.5.1
 	github.com/jmorganca/ollama v0.1.30-rc4
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/term v0.42.0
