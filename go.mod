@@ -3,7 +3,7 @@ module github.com/carapace-sh/carapace-man
 go 1.25.8
 
 require (
-	charm.land/glamour/v2 v2.0.0
+	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.4
 	github.com/carapace-sh/carapace v1.11.7
 	github.com/carapace-sh/carapace-spec v1.6.1
