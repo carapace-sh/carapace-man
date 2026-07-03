@@ -9,6 +9,7 @@ require (
 	github.com/carapace-sh/carapace-spec v1.7.1
 	github.com/mattn/go-isatty v0.0.22
 	github.com/spf13/cobra v1.10.2
+	go.etcd.io/bbolt v1.5.0
 	golang.org/x/term v0.44.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -41,7 +42,7 @@ require (
 	github.com/yuin/goldmark v1.7.8 // indirect
 	github.com/yuin/goldmark-emoji v1.0.5 // indirect
 	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
