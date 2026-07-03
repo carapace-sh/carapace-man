@@ -13,12 +13,12 @@ import (
 	mantomd "github.com/carapace-sh/carapace-man/third_party/github.com/mle86/man-to-md"
 )
 
-func manpage(uid *url.URL) (string, error) {
+func ManToMd(name string, section string) (string, error) {
 	args := []string{"--location"}
-	if path := strings.TrimPrefix(uid.Path, "/"); path != "" {
-		args = append(args, path)
+	if section != "" {
+		args = append(args, section)
 	}
-	args = append(args, uid.Host)
+	args = append(args, name)
 
 	stderr := &bytes.Buffer{}
 	command := exec.Command("man", args...)
@@ -54,7 +54,7 @@ func manpage(uid *url.URL) (string, error) {
 	filtered := &bytes.Buffer{}
 	found := false
 	scanner := bufio.NewScanner(r)
-	for scanner.Scan() { // TODO urks
+	for scanner.Scan() {
 		line := scanner.Text()
 		if found || strings.HasPrefix(line, ".TH") {
 			found = true
@@ -72,4 +72,12 @@ func manpage(uid *url.URL) (string, error) {
 	}
 
 	return string(output), nil
+}
+
+func manpage(uid *url.URL) (string, error) {
+	section := ""
+	if path := strings.TrimPrefix(uid.Path, "/"); path != "" {
+		section = path
+	}
+	return ManToMd(uid.Host, section)
 }
