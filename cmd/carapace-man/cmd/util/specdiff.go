@@ -15,7 +15,6 @@ type DiffResult struct {
 	RemovedSubcommands []string
 	ChangedFlags       []string
 	MissingDocCommand  []string
-	AIPrefixedEntries  []string
 }
 
 func SpecDiff(path string, existingDir string) (*DiffResult, error) {
@@ -50,17 +49,6 @@ func SpecDiff(path string, existingDir string) (*DiffResult, error) {
 		}
 		if newCmd.Documentation.Command == "" {
 			result.MissingDocCommand = append(result.MissingDocCommand, name)
-		}
-	}
-
-	for name, existingCmd := range existingSpecs {
-		if strings.HasPrefix(existingCmd.Documentation.Command, "[AI] ") {
-			result.AIPrefixedEntries = append(result.AIPrefixedEntries, name+"/command")
-		}
-		for k, v := range existingCmd.Documentation.Flag {
-			if strings.HasPrefix(v, "[AI] ") {
-				result.AIPrefixedEntries = append(result.AIPrefixedEntries, name+"/flag/"+k)
-			}
 		}
 	}
 
@@ -148,16 +136,8 @@ func PrintDiff(result *DiffResult) {
 			fmt.Printf("  ? %s\n", s)
 		}
 	}
-	if len(result.AIPrefixedEntries) > 0 {
-		fmt.Println("[AI] PREFIXED ENTRIES:")
-		for _, s := range result.AIPrefixedEntries {
-			fmt.Printf("  ! %s\n", s)
-		}
-	}
-
 	if len(result.NewSubcommands) == 0 && len(result.RemovedSubcommands) == 0 &&
-		len(result.ChangedFlags) == 0 && len(result.MissingDocCommand) == 0 &&
-		len(result.AIPrefixedEntries) == 0 {
+		len(result.ChangedFlags) == 0 && len(result.MissingDocCommand) == 0 {
 		fmt.Println("No differences found.")
 	}
 }
