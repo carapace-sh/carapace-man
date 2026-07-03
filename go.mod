@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	charm.land/glamour/v2 v2.0.1
-	charm.land/lipgloss/v2 v2.0.4
+	charm.land/lipgloss/v2 v2.0.5
 	github.com/carapace-sh/carapace v1.13.1
 	github.com/carapace-sh/carapace-spec v1.7.1
 	github.com/jmorganca/ollama v0.1.30-rc4
