@@ -96,6 +96,13 @@ func lookupDB(scheme, host string, fn func(*bolt.Bucket) error) (bool, error) {
 	if !ok {
 		return false, nil
 	}
+	return lookupDBFile(dbPath, scheme, host, fn)
+}
+
+// lookupDBFile opens a specific DB file read-only and runs fn against the
+// (scheme, host) host bucket. Returns false if the scheme or host bucket
+// doesn't exist in the DB.
+func lookupDBFile(dbPath, scheme, host string, fn func(*bolt.Bucket) error) (bool, error) {
 	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
 	if err != nil {
 		return false, err
@@ -219,46 +226,54 @@ func HostsFromDBs(scheme string) ([]string, error) {
 func UidsFromDBs(scheme, host string) ([]*url.URL, error) {
 	var uids []*url.URL
 	_, err := lookupDB(scheme, host, func(bucket *bolt.Bucket) error {
-		c := bucket.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			if v == nil {
-				continue
-			}
-			key := string(k)
-			if scheme == "cmd" {
-				path, field, ok := splitCmdKey(key)
-				if !ok {
-					continue
-				}
-				uidStr := fmt.Sprintf("cmd://%s", host)
-				if path != "" {
-					uidStr += "/" + path
-				}
-				if flagName, ok := strings.CutPrefix(field, "flag/"); ok {
-					uidStr += "?flag=" + flagName
-				} else if field == "command" {
-					// no query
-				} else {
-					continue
-				}
-				uid, err := url.Parse(uidStr)
-				if err != nil {
-					return err
-				}
-				uids = append(uids, uid)
-			} else {
-				uidStr := fmt.Sprintf("%s://%s/%s", scheme, host, key)
-				uid, err := url.Parse(uidStr)
-				if err != nil {
-					return err
-				}
-				uids = append(uids, uid)
-			}
-		}
-		return nil
+		var innerErr error
+		uids, innerErr = enumerateUids(bucket, scheme, host)
+		return innerErr
 	})
 	if err != nil {
 		return nil, err
+	}
+	return uids, nil
+}
+
+// enumerateUids scans a host bucket and reconstructs UIDs from its keys.
+func enumerateUids(bucket *bolt.Bucket, scheme, host string) ([]*url.URL, error) {
+	var uids []*url.URL
+	c := bucket.Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			continue
+		}
+		key := string(k)
+		if scheme == "cmd" {
+			path, field, ok := splitCmdKey(key)
+			if !ok {
+				continue
+			}
+			uidStr := fmt.Sprintf("cmd://%s", host)
+			if path != "" {
+				uidStr += "/" + path
+			}
+			if flagName, ok := strings.CutPrefix(field, "flag/"); ok {
+				uidStr += "?flag=" + flagName
+			} else if field == "command" {
+				// no query
+			} else {
+				continue
+			}
+			uid, err := url.Parse(uidStr)
+			if err != nil {
+				return nil, err
+			}
+			uids = append(uids, uid)
+		} else {
+			uidStr := fmt.Sprintf("%s://%s/%s", scheme, host, key)
+			uid, err := url.Parse(uidStr)
+			if err != nil {
+				return nil, err
+			}
+			uids = append(uids, uid)
+		}
 	}
 	return uids, nil
 }
@@ -295,4 +310,101 @@ func splitCmdKey(key string) (path, field string, ok bool) {
 		}
 	}
 	return "", "", false
+}
+
+// InspectSchemes returns all scheme names in a specific DB file.
+func InspectSchemes(dbPath string) ([]string, error) {
+	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var schemes []string
+	err = db.View(func(tx *bolt.Tx) error {
+		return tx.ForEach(func(name []byte, b *bolt.Bucket) error {
+			if string(name) == "_meta" {
+				return nil
+			}
+			schemes = append(schemes, string(name))
+			return nil
+		})
+	})
+	sort.Strings(schemes)
+	return schemes, err
+}
+
+// InspectHosts returns all host names for a scheme in a specific DB file.
+func InspectHosts(dbPath, scheme string) ([]string, error) {
+	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var hosts []string
+	err = db.View(func(tx *bolt.Tx) error {
+		schemeBucket := tx.Bucket([]byte(scheme))
+		if schemeBucket == nil {
+			return nil
+		}
+		return schemeBucket.ForEachBucket(func(hostName []byte) error {
+			hosts = append(hosts, string(hostName))
+			return nil
+		})
+	})
+	sort.Strings(hosts)
+	return hosts, err
+}
+
+// InspectUids returns all UIDs for a (scheme, host) in a specific DB file.
+func InspectUids(dbPath, scheme, host string) ([]*url.URL, error) {
+	var uids []*url.URL
+	found, err := lookupDBFile(dbPath, scheme, host, func(bucket *bolt.Bucket) error {
+		var innerErr error
+		uids, innerErr = enumerateUids(bucket, scheme, host)
+		return innerErr
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("scheme %q host %q not found in %s", scheme, host, dbPath)
+	}
+	return uids, nil
+}
+
+// InspectDescribe looks up a UID in a specific DB file and returns the doc.
+// Returns ("", false, nil) if the key is not present.
+func InspectDescribe(dbPath string, uid *url.URL) (string, bool, error) {
+	scheme := uid.Scheme
+	host := uid.Host
+
+	var result string
+	found, err := lookupDBFile(dbPath, scheme, host, func(bucket *bolt.Bucket) error {
+		var key string
+		if scheme == "cmd" {
+			path := strings.TrimPrefix(uid.Path, "/")
+			keyPrefix := path
+			if keyPrefix != "" {
+				keyPrefix += "/"
+			}
+			if q := uid.Query(); q.Has("flag") {
+				key = keyPrefix + "flag/" + q.Get("flag")
+			} else {
+				key = keyPrefix + "command"
+			}
+		} else {
+			key = strings.TrimPrefix(uid.Path, "/")
+		}
+		val := bucket.Get([]byte(key))
+		if val != nil {
+			result = string(val)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", false, err
+	}
+	return result, found && result != "", nil
 }

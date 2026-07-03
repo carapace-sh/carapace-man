@@ -38,6 +38,10 @@ carapace-man split-to <spec> <output-dir>   # split spec, preserve existing docs
 carapace-man spec-diff <spec> <existing-dir>   # report drift vs committed docs
 carapace-man man-to-md <command>            # convert system man page to markdown
 carapace-man man-to-md <command> --section 1
+
+carapace-man inspect <db>                   # list all UIDs in a compiled .db
+carapace-man inspect <db> <uid>             # render docs for a UID from a .db
+carapace-man inspect <db> <uid> --raw       # raw output (no styling)
 ```
 
 Typical doc-update workflow (from the `man-docs` skill / `update.go` long help):
@@ -78,6 +82,8 @@ cmd/carapace-man/
     split.go / splitto.go      # split spec into per-subcommand files
     specdiff.go                # diff fresh spec vs existing cmd/ docs
     mantomd.go                 # system man page → markdown (falls back to --help)
+    inspect.go                 # inspect compiled .db: list UIDs or render a UID's docs
+    compile.go                 # compile specs/static docs/man-dir into bbolt .db
     util/
       split.go / splitto.go    # actual split logic (split.go = legacy, writes to tmpdir)
       specdiff.go              # DiffResult collection + PrintDiff
@@ -87,8 +93,10 @@ pkg/man/
   manpage.go                   # man scheme handler (shells out to `man` + perl man-to-md)
   git.go                       # repo struct, clone/pull with functional options
   style.go                     # custom "carapace" glamour style, registered in init()
+  db.go                        # bbolt lookup (cmdDB, describeDB), host index, inspect queries
+  db_compile.go                # bbolt compilation (CompileSpec, CompileStatic, CompileManDir)
 pkg/actions/man/
-  man.go                       # carapace completion actions for UID completion (ActionUids)
+  man.go                       # carapace completion actions (ActionUids, ActionInspectUids)
 third_party/github.com/mle86/man-to-md/
   mantomd.go                   # go:embed of man-to-md.pl
   man-to-md.pl                 # vendored Perl script (GPL-3), requires `perl` + `man`
@@ -100,6 +108,7 @@ third_party/github.com/mle86/man-to-md/
 2. Root command: parse UID → `man.Describe(uid, glamour opts...)` → dispatch by scheme → optionally `Style()` with glamour renderer → print.
 3. `update`: validate spec → `util.SpecDiff` (print) → `util.SplitTo` (write files, merging existing `documentation:`).
 4. `man-to-md`: `man --location <section> <name>` → open the gzipped roff file → filter from `.TH` → pipe through embedded Perl script → output markdown. Falls back to `<command> --help` on failure.
+5. `inspect`: open .db read-only → without uid: enumerate all scheme/host/uid pairs and print sorted list. With uid: `man.InspectDescribe` → optionally `Style()` → print. Supports `--style`/`--raw`/`--wrap` flags like the root command.
 
 ## Conventions & Gotchas
 
