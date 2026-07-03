@@ -47,6 +47,12 @@ func cmd(uid *url.URL) (string, error) {
 		return s, nil
 	}
 
+	if s, ok, err := cmdDB(uid); err != nil {
+		return "", err
+	} else if ok {
+		return s, nil
+	}
+
 	location, err := Location()
 	if err != nil {
 		return "", err
