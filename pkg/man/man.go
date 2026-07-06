@@ -113,6 +113,12 @@ func Style(s string, opts ...glamour.TermRendererOption) (string, error) {
 }
 
 func descibe(uid *url.URL) (string, error) {
+	if s, ok, err := describeDB(uid); err != nil {
+		return "", err
+	} else if ok {
+		return s, nil
+	}
+
 	location, err := Location()
 	if err != nil {
 		return "", err
