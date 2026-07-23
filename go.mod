@@ -5,7 +5,7 @@ go 1.25.8
 require (
 	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.5
-	github.com/carapace-sh/carapace v1.13.2
+	github.com/carapace-sh/carapace v1.13.3
 	github.com/carapace-sh/carapace-spec v1.8.0
 	github.com/mattn/go-isatty v0.0.23
 	github.com/spf13/cobra v1.10.2
