@@ -8,6 +8,8 @@ import (
 
 	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace/pkg/xdg"
+	"github.com/mattn/go-isatty"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 )
 
@@ -53,7 +55,7 @@ func Hosts(scheme string) ([]string, error) {
 
 	schemes := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
 			schemes = append(schemes, entry.Name())
 		}
 	}
@@ -112,6 +114,26 @@ func Style(s string, opts ...glamour.TermRendererOption) (string, error) {
 	return r.Render(s)
 }
 
+// RenderOptions builds glamour renderer options for styling terminal output.
+// Returns nil opts if output is not a TTY or raw mode is requested,
+// so callers can skip styling entirely.
+func RenderOptions(style string, width int, raw bool) ([]glamour.TermRendererOption, error) {
+	if raw || !isatty.IsTerminal(os.Stdout.Fd()) {
+		return nil, nil
+	}
+	if width == 0 {
+		var err error
+		width, _, err = term.GetSize(int(os.Stdout.Fd()))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return []glamour.TermRendererOption{
+		glamour.WithStylePath(style),
+		glamour.WithWordWrap(width),
+	}, nil
+}
+
 func descibe(uid *url.URL) (string, error) {
 	if s, ok, err := describeDB(uid); err != nil {
 		return "", err
@@ -139,8 +161,8 @@ func descibe(uid *url.URL) (string, error) {
 		return "", nil
 	}
 
-	if strings.HasPrefix(description, "./") { // description is a path
-		path := fmt.Sprintf("%v/%v/%v/%v", location, uid.Scheme, uid.Host, strings.TrimPrefix(description, "./")) // TODO ensure path is within dir
+	if suffix, ok := strings.CutPrefix(description, "./"); ok { // description is a path
+		path := fmt.Sprintf("%v/%v/%v/%v", location, uid.Scheme, uid.Host, suffix) // TODO ensure path is within dir
 
 		content, err = os.ReadFile(path)
 		if err != nil {
@@ -149,5 +171,5 @@ func descibe(uid *url.URL) (string, error) {
 		return string(content), nil
 	}
 
-	return m[strings.TrimPrefix(uid.Path, "/")], nil // TODO return error for unknown?
+	return description, nil // TODO return error for unknown?
 }

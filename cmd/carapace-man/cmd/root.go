@@ -3,16 +3,12 @@ package cmd
 import (
 	"fmt"
 	"net/url"
-	"os"
 
-	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace"
 	action "github.com/carapace-sh/carapace-man/pkg/actions/man"
 	"github.com/carapace-sh/carapace-man/pkg/man"
 	spec "github.com/carapace-sh/carapace-spec"
-	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var rootCmd = &cobra.Command{
@@ -36,20 +32,11 @@ func printUid(s, style string, width int, raw bool) error {
 		return err
 	}
 
-	opts := make([]glamour.TermRendererOption, 0)
-	if !raw && isatty.IsTerminal(os.Stdout.Fd()) {
-		if width == 0 {
-			width, _, err = term.GetSize(int(os.Stdout.Fd()))
-			if err != nil {
-				return err
-			}
-		}
-
-		opts = append(opts,
-			glamour.WithStylePath(style),
-			glamour.WithWordWrap(width),
-		)
+	opts, err := man.RenderOptions(style, width, raw)
+	if err != nil {
+		return err
 	}
+
 	description, err := man.Describe(uid, opts...)
 	if err != nil {
 		return err

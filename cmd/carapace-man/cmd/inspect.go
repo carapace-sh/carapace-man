@@ -6,14 +6,11 @@ import (
 	"os"
 	"sort"
 
-	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace"
 	action "github.com/carapace-sh/carapace-man/pkg/actions/man"
 	"github.com/carapace-sh/carapace-man/pkg/man"
 	spec "github.com/carapace-sh/carapace-spec"
-	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var inspectCmd = &cobra.Command{
@@ -102,21 +99,10 @@ func describeUid(dbPath, uidStr, style string, raw bool, wrap int) error {
 		return fmt.Errorf("no documentation for %q in %s", uidStr, dbPath)
 	}
 
-	opts := make([]glamour.TermRendererOption, 0)
-	if !raw && isatty.IsTerminal(os.Stdout.Fd()) {
-		width := wrap
-		if width == 0 {
-			width, _, err = term.GetSize(int(os.Stdout.Fd()))
-			if err != nil {
-				return err
-			}
-		}
-		opts = append(opts,
-			glamour.WithStylePath(style),
-			glamour.WithWordWrap(width),
-		)
+	opts, err := man.RenderOptions(style, wrap, raw)
+	if err != nil {
+		return err
 	}
-
 	if len(opts) > 0 {
 		description, err = man.Style(description, opts...)
 		if err != nil {
