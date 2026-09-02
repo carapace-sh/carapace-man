@@ -18,8 +18,8 @@ github.com/carapace-sh/carapace-pflag v1.1.0 h1:uB33wch8ADjP878NadQnbZ5vyROcj/Ac
 github.com/carapace-sh/carapace-pflag v1.1.0/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/carapace-sh/carapace-shlex v1.1.1 h1:ccmNeetAYZOk4IcV36youFDsXusT9uCNW2Njkw+QS+Q=
 github.com/carapace-sh/carapace-shlex v1.1.1/go.mod h1:lJ4ZsdxytE0wHJ8Ta9S7Qq0XpjgjU0mdfCqiI2FHx7M=
-github.com/carapace-sh/carapace-spec v1.8.0 h1:2hhud3BvDy5damB+8amIjvSdH+dBQOMawq3lpltrfrY=
-github.com/carapace-sh/carapace-spec v1.8.0/go.mod h1:t3OMW73eNYQOSJqSE/Zll013/aFZrZLxQ04Dx3WszvA=
+github.com/carapace-sh/carapace-spec v1.8.1 h1:C86jD8RIcibM0s1+jLSOStmvmuSS+Zy7L0jjEPa/C3Q=
+github.com/carapace-sh/carapace-spec v1.8.1/go.mod h1:pXBIdHIW2NkdXo9h4CmUurggMN6c2WZZ7rsy+ZI6ui4=
 github.com/charmbracelet/colorprofile v0.4.3 h1:QPa1IWkYI+AOB+fE+mg/5/4HRMZcaXex9t5KX76i20Q=
 github.com/charmbracelet/colorprofile v0.4.3/go.mod h1:/zT4BhpD5aGFpqQQqw7a+VtHCzu+zrQtt1zhMt9mR4Q=
 github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 h1:rdnVWKgJpTVXKuKuJyxDJ+NFJdUaUqGvyGy61OcvlbA=
