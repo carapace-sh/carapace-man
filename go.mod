@@ -6,7 +6,7 @@ require (
 	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/carapace-sh/carapace v1.15.3
-	github.com/carapace-sh/carapace-spec v1.8.0
+	github.com/carapace-sh/carapace-spec v1.8.1
 	github.com/mattn/go-isatty v0.0.24
 	github.com/spf13/cobra v1.10.2
 	go.etcd.io/bbolt v1.5.0
