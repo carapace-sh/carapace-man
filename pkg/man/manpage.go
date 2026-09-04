@@ -58,8 +58,12 @@ func ManToMd(name string, section string) (string, error) {
 		line := scanner.Text()
 		if found || strings.HasPrefix(line, ".TH") {
 			found = true
-			filtered.WriteString(line + "\n")
+			filtered.WriteString(line)
+			filtered.WriteByte('\n')
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
 	}
 
 	stderr = &bytes.Buffer{}
