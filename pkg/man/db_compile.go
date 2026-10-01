@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/carapace-sh/carapace-spec/pkg/command"
+	"github.com/carapace-sh/carapace/pkg/command"
 	bolt "go.etcd.io/bbolt"
 	"gopkg.in/yaml.v3"
 )
