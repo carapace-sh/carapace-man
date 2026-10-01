@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/carapace-sh/carapace-spec/pkg/command"
+	"github.com/carapace-sh/carapace/pkg/command"
 	"github.com/carapace-sh/carapace/pkg/xdg"
 	"gopkg.in/yaml.v3"
 )
