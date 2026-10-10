@@ -112,7 +112,7 @@ func CompileHostDir(hostDir, dbPath string) error {
 			}
 			// Derive the path prefix from the filename: <host>.<sub.path>.yaml → <sub/path>
 			// e.g. git.commit.diff.yaml → commit/diff, git.yaml → "" (root)
-			filename := strings.TrimSuffix(entry.Name(), ".yaml")
+			filename := UnmangleFilename(strings.TrimSuffix(entry.Name(), ".yaml"))
 			var prefix string
 			if filename != host {
 				remaining := strings.TrimPrefix(filename, host+".")

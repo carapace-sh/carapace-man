@@ -59,7 +59,7 @@ func cmd(uid *url.URL) (string, error) {
 	}
 
 	subcommand := strings.ReplaceAll(uid.Path, "/", ".")
-	path := fmt.Sprintf("%v/%v/%v/%v%v.yaml", location, uid.Scheme, uid.Host, uid.Host, subcommand)
+	path := fmt.Sprintf("%v/%v/%v/%v.yaml", location, uid.Scheme, uid.Host, MangleFilename(uid.Host+subcommand))
 
 	content, err := os.ReadFile(path)
 	if err != nil {

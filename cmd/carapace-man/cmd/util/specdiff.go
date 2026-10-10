@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/carapace-sh/carapace-man/pkg/man"
 	"github.com/carapace-sh/carapace/pkg/command"
 	"gopkg.in/yaml.v3"
 )
@@ -92,7 +93,7 @@ func collectExistingSpecs(dir string) map[string]command.Command {
 		if err := yaml.Unmarshal(content, &cmd); err != nil {
 			continue
 		}
-		name := strings.TrimSuffix(entry.Name(), ".yaml")
+		name := man.UnmangleFilename(strings.TrimSuffix(entry.Name(), ".yaml"))
 		result[name] = cmd
 	}
 	return result

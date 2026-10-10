@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/carapace-sh/carapace-man/pkg/man"
 	"github.com/carapace-sh/carapace/pkg/command"
 	"gopkg.in/yaml.v3"
 )
@@ -37,7 +38,7 @@ func split(command command.Command, prefix ...string) error {
 	if err != nil {
 		return err
 	}
-	filename := fmt.Sprintf("%v/carapace-man/%v/%v.yaml", os.TempDir(), prefix[0], strings.Join(prefix, "."))
+	filename := fmt.Sprintf("%v/carapace-man/%v/%v.yaml", os.TempDir(), prefix[0], man.MangleFilename(strings.Join(prefix, ".")))
 	println(filename)
 
 	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
@@ -45,4 +46,3 @@ func split(command command.Command, prefix ...string) error {
 	}
 	return os.WriteFile(filename, m, os.ModePerm)
 }
-
