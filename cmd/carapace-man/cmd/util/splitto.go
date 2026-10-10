@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/carapace-sh/carapace-man/pkg/man"
 	"github.com/carapace-sh/carapace/pkg/command"
 	"gopkg.in/yaml.v3"
 )
@@ -32,7 +33,7 @@ func splitTo(cmd command.Command, outputDir string, prefix []string) error {
 	}
 	cmd.Commands = nil
 
-	filename := filepath.Join(outputDir, strings.Join(prefix, ".")+".yaml")
+	filename := filepath.Join(outputDir, man.MangleFilename(strings.Join(prefix, "."))+".yaml")
 
 	if existing, err := os.ReadFile(filename); err == nil {
 		var existingCmd command.Command
