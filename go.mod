@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
-	github.com/carapace-sh/carapace v1.17.0
+	github.com/carapace-sh/carapace v1.17.1
 	github.com/carapace-sh/carapace-spec v1.10.0
 	github.com/mattn/go-isatty v0.0.24
 	github.com/spf13/cobra v1.10.2
@@ -17,7 +17,7 @@ require (
 require (
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/carapace-sh/carapace-shlex/v2 v2.0.0 // indirect
+	github.com/carapace-sh/carapace-shlex/v2 v2.1.2 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
 	github.com/charmbracelet/x/ansi v0.11.8 // indirect
