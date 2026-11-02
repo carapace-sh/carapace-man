@@ -11,7 +11,7 @@ import (
 
 	"github.com/carapace-sh/carapace/pkg/command"
 	bolt "go.etcd.io/bbolt"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type compileOptions struct {

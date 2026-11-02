@@ -8,7 +8,7 @@ import (
 	"github.com/carapace-sh/carapace"
 	"github.com/carapace-sh/carapace-man/pkg/man"
 	spec "github.com/carapace-sh/carapace-spec"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func ActionUids() carapace.Action {
