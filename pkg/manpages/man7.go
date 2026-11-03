@@ -17,8 +17,8 @@ func (w *writer) UnknownRequest(name string, args []string, noBreak bool) {
 		w.flushBlock()
 		w.item = itemNone
 		w.mark = ""
-		w.tags = nil
-		w.tagStage = 0
+		w.tag.items = nil
+		w.tag.pending = false
 	case "RS":
 		w.flushBlock()
 		w.depth++
@@ -81,7 +81,7 @@ func (w *writer) renderedArgs(args []string) []string {
 func (w *writer) sectionHeading(level int, args []string) {
 	w.flushBlock()
 	if len(args) == 0 {
-		w.pendingHead = level
+		w.trap.head = level
 		w.item = itemNone
 		return
 	}
@@ -89,18 +89,18 @@ func (w *writer) sectionHeading(level int, args []string) {
 }
 
 func (w *writer) taggedParagraph(continuation bool, args []string) {
-	if w.item == itemTag && w.tagStage == 0 {
-		w.tagStage = 1
+	if w.item == itemTag && !w.tag.pending {
+		w.tag.pending = true
 		return
 	}
 	if !continuation {
 		w.flushBlock()
 		w.item = itemTag
-		w.tags = nil
-		w.tagStage = 0
+		w.tag.items = nil
+		w.tag.pending = false
 		return
 	}
-	w.tagStage = 1
+	w.tag.pending = true
 }
 
 func (w *writer) indentedParagraph(args []string) {
@@ -122,17 +122,17 @@ func (w *writer) indentedParagraph(args []string) {
 // text becomes the tag row; otherwise the text joins the current block.
 func (w *writer) fontMacro(kind byte, name string, args []string) {
 	text := strings.Join(args, " ")
-	if w.item == itemTag && w.tagStage == 0 {
+	if w.item == itemTag && !w.tag.pending {
 		if text == "" {
-			w.pendingFont = kind
+			w.trap.font = kind
 			return
 		}
-		w.tags = append(w.tags, wrapFont(kind, w.renderArgsJoin(args, " ")))
-		w.tagStage = 1
+		w.tag.items = append(w.tag.items, wrapFont(kind, w.renderArgsJoin(args, " ")))
+		w.tag.pending = true
 		return
 	}
 	if text == "" {
-		w.pendingFont = kind
+		w.trap.font = kind
 		return
 	}
 	w.inline(wrapFont(kind, w.renderArgsJoin(args, " ")), true)
@@ -176,9 +176,9 @@ func (w *writer) alternatingFontMacro(name string, args []string) {
 	if text.Len() == 0 {
 		return
 	}
-	if w.item == itemTag && w.tagStage == 0 {
-		w.tags = append(w.tags, text.String())
-		w.tagStage = 1
+	if w.item == itemTag && !w.tag.pending {
+		w.tag.items = append(w.tag.items, text.String())
+		w.tag.pending = true
 		return
 	}
 	w.inline(text.String(), true)

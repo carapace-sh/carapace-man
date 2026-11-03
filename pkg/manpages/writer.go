@@ -37,13 +37,18 @@ type writer struct {
 
 	depth int
 
-	item     itemKind
-	mark     string
-	tags     []string
-	tagStage int
+	item itemKind
+	mark string
 
-	pendingFont byte
-	pendingHead int
+	tag struct {
+		items   []string
+		pending bool
+	}
+
+	trap struct {
+		font byte
+		head int
+	}
 
 	link *linkState
 	esc  func(string) string
@@ -157,22 +162,22 @@ func (w *writer) Text(line string) {
 		w.link.text = append(w.link.text, line)
 		return
 	}
-	if w.pendingHead != 0 {
-		level := w.pendingHead
-		w.pendingHead = 0
+	if w.trap.head != 0 {
+		level := w.trap.head
+		w.trap.head = 0
 		w.item = itemNone
 		w.heading(level, w.render(line))
 		return
 	}
-	if w.pendingFont != 0 {
-		kind := w.pendingFont
-		w.pendingFont = 0
+	if w.trap.font != 0 {
+		kind := w.trap.font
+		w.trap.font = 0
 		w.inline(wrapFont(kind, w.render(line)), true)
 		return
 	}
-	if w.item == itemTag && w.tagStage == 0 {
-		w.tags = append(w.tags, w.render(line))
-		w.tagStage = 1
+	if w.item == itemTag && !w.tag.pending {
+		w.tag.items = append(w.tag.items, w.render(line))
+		w.tag.pending = true
 		return
 	}
 	if len(w.block) == 0 && w.item == itemNone && escapeLineStart(line) {
@@ -290,7 +295,7 @@ func (w *writer) flushBlock() {
 	case itemOrdered:
 		content = indentBody(w.mark+" "+content, w.depth)
 	case itemTag:
-		head := strings.Join(w.tags, ", ")
+		head := strings.Join(w.tag.items, ", ")
 		if content != "" {
 			content = head + "\n" + indentBody(content, w.depth)
 		} else {
@@ -321,7 +326,7 @@ func (w *writer) flush(content string, kind itemKind, same bool) {
 
 func (w *writer) resetBlock() {
 	w.block = nil
-	w.tags = nil
-	w.tagStage = 0
+	w.tag.items = nil
+	w.tag.pending = false
 	w.mark = ""
 }

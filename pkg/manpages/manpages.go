@@ -51,6 +51,9 @@ func (s mdocSink) UnknownRequest(name string, args []string, noBreak bool) {
 	s.m.macro(name, args, noBreak)
 }
 
+func (s mdocSink) Break()      { s.w.Break() }
+func (s mdocSink) Space(n int) { s.w.Space(n) }
+
 func (s mdocSink) PreprocessorBlock(name string, body []string) {
 	s.w.PreprocessorBlock(name, body)
 }

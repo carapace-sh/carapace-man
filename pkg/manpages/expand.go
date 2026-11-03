@@ -14,12 +14,15 @@ const (
 	modeMdoc
 )
 
-// Sink receives processed output lines from the expansion engine. Unknown
-// macro calls are forwarded so a later stage (the dialect layer) can dispatch
-// man(7)/mdoc(7) macros.
+// Sink receives processed output from the expansion engine: text lines,
+// line/paragraph breaks, preprocessor regions, and unknown macro calls that
+// the dialect layer dispatches as man(7)/mdoc(7) macros.
 type Sink interface {
 	Text(line string)
 	UnknownRequest(name string, args []string, noBreak bool)
+	Break()
+	Space(n int)
+	PreprocessorBlock(name string, body []string)
 }
 
 type macroDef struct {
@@ -105,9 +108,7 @@ func newEngine(src *source, sink Sink) *Engine {
 }
 
 func (e *Engine) lineBreak() {
-	if sink, ok := e.sink.(interface{ Break() }); ok {
-		sink.Break()
-	}
+	e.sink.Break()
 }
 
 func (e *Engine) spaceBreak(args []string) {
@@ -117,9 +118,7 @@ func (e *Engine) spaceBreak(args []string) {
 			value = parsed
 		}
 	}
-	if sink, ok := e.sink.(interface{ Space(int) }); ok {
-		sink.Space(value)
-	}
+	e.sink.Space(value)
 }
 
 func parseSpaceValue(arg string) int {
@@ -158,11 +157,7 @@ func (e *Engine) preprocessorBlock(name, end string) {
 			break
 		}
 	}
-	if sink, ok := e.sink.(interface {
-		PreprocessorBlock(name string, body []string)
-	}); ok {
-		sink.PreprocessorBlock(name, body)
-	}
+	e.sink.PreprocessorBlock(name, body)
 }
 
 func (e *Engine) run() error {
@@ -254,7 +249,7 @@ func (e *Engine) dispatchControl(name, rest string, args []string, noBreak bool)
 	if def, ok := e.macros[name]; ok {
 		return e.expandMacro(name, def, args)
 	}
-	e.noteMode(name)
+
 	e.sink.UnknownRequest(name, e.interpolatedArgs(args), noBreak)
 	return nil
 }
@@ -267,17 +262,6 @@ func (e *Engine) interpolatedArgs(args []string) []string {
 		out[i] = e.interpolate(arg)
 	}
 	return out
-}
-
-func (e *Engine) noteMode(name string) {
-	if name == "TH" {
-		e.mode = modeMan
-		return
-	}
-	switch name {
-	case "Dd", "Dt", "Os", "Sh", "Ss", "Pp", "Nm", "Nd", "Bl", "Bd", "Fl", "Ar", "Op", "It", "El", "Dl", "D1":
-		e.mode = modeMdoc
-	}
 }
 
 func (e *Engine) emitText(line string) error {

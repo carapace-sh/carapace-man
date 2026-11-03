@@ -20,6 +20,12 @@ func (s *recSink) UnknownRequest(name string, args []string, noBreak bool) {
 	s.nobreak = append(s.nobreak, noBreak)
 }
 
+func (s *recSink) Break()      {}
+func (s *recSink) Space(n int) {}
+func (s *recSink) PreprocessorBlock(name string, body []string) {
+	s.unknown = append(s.unknown, name+"\x00"+strings.Join(body, "\n"))
+}
+
 func run(src string) (*recSink, *Engine, error) {
 	sink := &recSink{}
 	sourcex, err := newSource(strings.NewReader(src))

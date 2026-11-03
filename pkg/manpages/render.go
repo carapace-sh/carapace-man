@@ -117,12 +117,8 @@ func numericGlyphReturn(key string) string {
 // arguments, or plain continuation for word-forming escapes.
 func escapeSkip(rest string, typ byte) int {
 	switch typ {
-	case 'h', 'v', 'w', 'x', 'l', 'L', 'o', 'Z', 'k', 'D':
+	case 'h', 'v', 'w', 'x', 'l', 'L', 'o', 'Z', 'k', 'D', 'a', 'j', 'g', 'A', 'B', 'b', 'O':
 		return delimitedSkip(rest)
-	case 'a', 'j', 'g', 'A', 'B', 'b', 'O':
-		return delimitedSkip(rest)
-	case 'c', 'p':
-		return 0
 	}
 	return 0
 }

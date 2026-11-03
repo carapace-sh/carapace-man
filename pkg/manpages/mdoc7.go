@@ -319,7 +319,7 @@ func (m *mdoc) item(args []string) {
 	case "bullet", "dash":
 		m.w.flushBlock()
 		m.w.item = itemBullet
-		m.w.tagStage = 0
+		m.w.tag.pending = false
 		if head != "" {
 			m.w.inline(head, true)
 		}
@@ -332,7 +332,7 @@ func (m *mdoc) item(args []string) {
 		m.w.flushBlock()
 		m.w.item = itemOrdered
 		m.w.mark = strconv.Itoa(kindCount) + "."
-		m.w.tagStage = 0
+		m.w.tag.pending = false
 		if head != "" {
 			m.w.inline(head, true)
 		}
@@ -341,10 +341,10 @@ func (m *mdoc) item(args []string) {
 	case "tag", "hang", "ohang", "inset", "diag", "item":
 		m.w.flushBlock()
 		m.w.item = itemTag
-		m.w.tags = nil
-		m.w.tagStage = 1
+		m.w.tag.items = nil
+		m.w.tag.pending = true
 		if head != "" {
-			m.w.tags = append(m.w.tags, head)
+			m.w.tag.items = append(m.w.tag.items, head)
 		}
 	default:
 		m.w.flushBlock()
