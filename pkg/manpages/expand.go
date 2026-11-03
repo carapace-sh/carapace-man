@@ -90,6 +90,15 @@ func newEngine(src *source, sink Sink) *Engine {
 	}
 }
 
+func (e *Engine) paragraphBreak() {
+	switch sink := e.sink.(type) {
+	case interface{ Break() }:
+		sink.Break()
+	case interface{ Space(int) }:
+		sink.Space(1)
+	}
+}
+
 func (e *Engine) run() error {
 	for {
 		line, ok := e.src.next()
@@ -163,15 +172,28 @@ func (e *Engine) dispatchControl(name, rest string, args []string, noBreak bool)
 		return nil
 	case "sy", "pi", "open", "write", "writec", "close", "cf", "lf", "nx":
 		return nil
-	case "sp", "br", "bp", "ne", "fl":
+	case "sp", "br", "bp":
+		e.paragraphBreak()
+		return nil
+	case "ne", "fl":
 		return nil
 	}
 	if def, ok := e.macros[name]; ok {
 		return e.expandMacro(name, def, args)
 	}
 	e.noteMode(name)
-	e.sink.UnknownRequest(name, args, noBreak)
+	e.sink.UnknownRequest(name, e.interpolatedArgs(args), noBreak)
 	return nil
+}
+
+// interpolatedArgs expands string and register interpolations in each
+// argument, matching mandoc's behavior of expanding macro arguments.
+func (e *Engine) interpolatedArgs(args []string) []string {
+	out := make([]string, len(args))
+	for i, arg := range args {
+		out[i] = e.interpolate(arg)
+	}
+	return out
 }
 
 func (e *Engine) noteMode(name string) {
@@ -256,7 +278,12 @@ func (e *Engine) doDefine(name string, args []string) error {
 	key := args[0]
 	end := ""
 	if len(args) >= 2 {
-		end = strings.TrimSpace(args[1])
+		candidate := strings.TrimSpace(args[1])
+		// macro and end names are single tokens; anything else (e.g. a
+		// comment that lost its escaping) is not a name.
+		if candidate != "" && !strings.ContainsAny(candidate, " 	") {
+			end = candidate
+		}
 	}
 	var body []string
 	for {
