@@ -1,6 +1,7 @@
 package manpages
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -256,6 +257,9 @@ func (e *Engine) renderEscapes(s string) string {
 			i += 2 + delimitedSkip(s[i+2:])
 		case 'C':
 			i += 2 + delimitedSkip(s[i+2:])
+		case 'X':
+			b.WriteString("X")
+			i += 2
 		case '`':
 			b.WriteByte('`')
 			i += 2
@@ -289,7 +293,16 @@ func (e *Engine) renderEscapes(s string) string {
 		}
 	}
 	out := b.String()
+	out = ttyLinks(out)
 	return e.applyCharTranslations(out)
+}
+
+// ttyLinks converts groff's OSC-8 device extensions
+var ttyLinkPattern = regexp.MustCompile(`X'tty: link ([^']*)'(?s)(.*?)X'tty: link'`)
+
+func ttyLinks(text string) string {
+	text = ttyLinkPattern.ReplaceAllString(text, "[$2]($1)")
+	return strings.ReplaceAll(text, `X'tty: link'`, "")
 }
 
 func numericGlyphReturn(key string) string {
