@@ -1,0 +1,89 @@
+version: 2
+before:
+  hooks:
+    - go mod download
+builds:
+  - id: default
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    main: ./cmd/carapace-man
+    binary: carapace-man
+  - id: termux
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - android
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - "386"
+    main: ./cmd/carapace-man
+    binary: carapace-man
+    tool: go-termux
+archives:
+  - id: default
+    ids:
+     - default
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+  - id: termux
+    ids:
+      - termux
+    name_template: '{{ .Binary }}_{{ .Version }}_termux_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
+
+homebrew_casks:
+  -
+    name: carapace-man
+    description: "A multi-shell completion man companion"
+    homepage: "https://github.com/carapace-sh/carapace-man"
+    license: "MIT"
+    repository:
+      owner: rsteube
+      name: homebrew-tap
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+scoops:
+  -
+    description: "A multi-shell completion man companion"
+    homepage: "https://github.com/carapace-sh/carapace-man"
+    license: "MIT"
+    repository:
+      owner: rsteube
+      name: scoop-bucket
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
+    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+
+aurs:
+  -
+    description: "A multi-shell completion man companion"
+    homepage: "https://github.com/carapace-sh/carapace-man"
+    license: "MIT"
+    maintainers:
+      - rsteube <rsteube@users.noreply.github.com>
+    private_key: '{{ .Env.AUR_KEY }}'
+    git_url: 'ssh://aur@aur.archlinux.org/carapace-man-bin.git'
+
+nfpms:
+  -
+    description: "A multi-shell completion man companion"
+    homepage: "https://github.com/carapace-sh/carapace-man"
+    license: "MIT"
+    maintainer: rsteube <rsteube@users.noreply.github.com>
+    formats:
+      - apk
+      - deb
+      - rpm
+      - termux.deb
+
+publishers:
+  - name: fury
+    cmd: "bash -c \"[[ {{.ArtifactPath}} =~ ^.*.(deb|rpm)$ ]] && curl -F package=@{{abs .ArtifactPath}} https://$FURY_TOKEN@push.fury.io/rsteube/ || true\""
+    env:
+      - FURY_TOKEN={{ .Env.FURY_TOKEN }}
