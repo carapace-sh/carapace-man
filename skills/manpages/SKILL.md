@@ -42,6 +42,7 @@ Load the reference that matches your task. When in doubt, load multiple referenc
 | parser design, Go implementation, architecture, tokenizer, state machine, dialect detection, user macro expansion, conditional evaluation, register defaults, fill mode tracking, next-line trap, font stack, argument parsing, quoted arguments, line continuation, clean-room | [references/parser-design.md](references/parser-design.md) |
 | markdown output, mapping table, bold/italic/code, headings, blockquote, list mapping, escaping, `**`, `*`, backtick, hard line break, non-ASCII, HTML entity, mandoc -T markdown, mdoc_markdown, markup loss | [references/markdown-mapping.md](references/markdown-mapping.md) |
 | existing tools, mandoc, pandoc, man-to-md, man2md, roff-cli, ManT, license comparison, ISC, GPL-3, Apache-2.0, public domain, go-md2man, debiman, clean-room guidance, what can be reused, pod2man output | [references/existing-tools.md](references/existing-tools.md) |
+| edge cases, corpus, probe, MANPAGES_PROBE, hang, crash, `.It` outside `Bl`, binary minus, tbl, eqn, pic, OSC-8, tty link, `.X'tty: link', NAME region linkify, approximations, tbl/data | [references/edge-cases.md](references/edge-cases.md) |
 
 ## Quick Guide
 
@@ -53,6 +54,7 @@ Load the reference that matches your task. When in doubt, load multiple referenc
 - **How do I render a roff construct as markdown and escape metacharacters?** → [references/markdown-mapping.md](references/markdown-mapping.md)
 - **Can I port code from tool X under our MIT license?** → [references/existing-tools.md](references/existing-tools.md)
 - **Why do real-world pages (pod2man, Perl pages) break simple parsers?** → [references/parser-design.md](references/parser-design.md)
+- **Which edge cases did the real corpus surface / what is approximated?** → [references/edge-cases.md](references/edge-cases.md)
 
 ## Data Flow
 

@@ -390,9 +390,6 @@ func (p *numParser) parseAdditive() (float64, bool) {
 			}
 			left += right
 		case '-':
-			if p.peekNextIsDigit() {
-				continue
-			}
 			p.pos++
 			right, ok := p.parseMultiplicative()
 			if !ok {
@@ -403,11 +400,6 @@ func (p *numParser) parseAdditive() (float64, bool) {
 			return left, true
 		}
 	}
-}
-
-func (p *numParser) peekNextIsDigit() bool {
-	i := p.pos + 1
-	return i < len(p.s) && (p.s[i] >= '0' && p.s[i] <= '9' || p.s[i] == '.')
 }
 
 func (p *numParser) parseMultiplicative() (float64, bool) {

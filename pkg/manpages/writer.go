@@ -117,6 +117,13 @@ func (w *writer) Space(n int) {
 	w.flushBlock()
 }
 
+// PreprocessorBlock emits a captured tbl/eqn/pic region as a neutral code
+// block, preserving the region source verbatim.
+func (w *writer) PreprocessorBlock(name string, body []string) {
+	w.flushBlock()
+	w.flush("```\n"+strings.Join(body, "\n")+"\n```", itemCode, false)
+}
+
 func (w *writer) fenceOpen() {
 	w.flushBlock()
 	if w.fenced {

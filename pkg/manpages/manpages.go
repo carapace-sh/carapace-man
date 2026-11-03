@@ -50,3 +50,7 @@ func (s mdocSink) Text(line string) {
 func (s mdocSink) UnknownRequest(name string, args []string, noBreak bool) {
 	s.m.macro(name, args, noBreak)
 }
+
+func (s mdocSink) PreprocessorBlock(name string, body []string) {
+	s.w.PreprocessorBlock(name, body)
+}

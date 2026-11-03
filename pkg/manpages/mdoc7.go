@@ -307,11 +307,15 @@ func (m *mdoc) emitTitle() {
 // item handles .It with the standard mdoc list bodies.
 func (m *mdoc) item(args []string) {
 	list := m.currentList()
+	kind := ""
+	if list != nil {
+		kind = list.kind
+	}
 	head := ""
 	if len(args) > 0 {
 		head = m.inline(args)
 	}
-	switch list.kind {
+	switch kind {
 	case "bullet", "dash":
 		m.w.flushBlock()
 		m.w.item = itemBullet
@@ -320,10 +324,14 @@ func (m *mdoc) item(args []string) {
 			m.w.inline(head, true)
 		}
 	case "enum":
-		list.count++
+		kindCount := 0
+		if list != nil {
+			list.count++
+			kindCount = list.count
+		}
 		m.w.flushBlock()
 		m.w.item = itemOrdered
-		m.w.mark = strconv.Itoa(list.count) + "."
+		m.w.mark = strconv.Itoa(kindCount) + "."
 		m.w.tagStage = 0
 		if head != "" {
 			m.w.inline(head, true)

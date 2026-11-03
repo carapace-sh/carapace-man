@@ -33,6 +33,20 @@ const (
 	maxBlockLines  = 4096
 )
 
+// preprocessorEnds maps preprocessor region openers to their terminators:
+// the region body is captured raw and emitted as a neutral code block.
+var preprocessorEnds = map[string]string{
+	"TS":      "TE",
+	"EQ":      "EN",
+	"PS":      "PE",
+	"PF":      "PE",
+	"PY":      "PE",
+	"G1":      "G2",
+	"R1":      "R2",
+	"cstart":  "cend",
+	".cstart": ".cend",
+}
+
 // Engine runs the roff expansion layer: strings, number registers, user
 // macros, conditionals, ignored blocks, and character translation. Text and
 // unrecognized control lines are handed to a Sink after interpolation.
@@ -126,6 +140,31 @@ func parseSpaceValue(arg string) int {
 	return value
 }
 
+// preprocessorBlock captures a tbl/eqn/pic/... region and hands it to a
+// PreprocessorBlock sink; regions are skipped when no sink supports them.
+func (e *Engine) preprocessorBlock(name, end string) {
+	var body []string
+	for {
+		line, ok := e.src.next()
+		if !ok {
+			break
+		}
+		stripped, _ := stripComment(strings.TrimRight(line, " \t"))
+		body = append(body, line)
+		if isEndedBy(strings.TrimSpace(stripped), end) {
+			break
+		}
+		if len(body) > maxBlockLines {
+			break
+		}
+	}
+	if sink, ok := e.sink.(interface {
+		PreprocessorBlock(name string, body []string)
+	}); ok {
+		sink.PreprocessorBlock(name, body)
+	}
+}
+
 func (e *Engine) run() error {
 	for {
 		line, ok := e.src.next()
@@ -158,6 +197,10 @@ func (e *Engine) processLine(line string) error {
 }
 
 func (e *Engine) dispatchControl(name, rest string, args []string, noBreak bool) error {
+	if end, ok := preprocessorEnds[name]; ok {
+		e.preprocessorBlock(name, end)
+		return nil
+	}
 	switch name {
 	case "ds", "as", "ds1", "as1":
 		e.doString(name, rest)
