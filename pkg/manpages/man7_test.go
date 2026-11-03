@@ -159,7 +159,7 @@ func TestHyperlinkMR(t *testing.T) {
 		".TH FOO 1",
 		".SH SEE ALSO",
 		".MR bar 1",
-	), "bar(1)")
+	), "[**bar** (*1*)](man://bar/1)")
 }
 
 func TestPod2manStylePage(t *testing.T) {

@@ -240,7 +240,10 @@ func (e *Engine) renderEscapes(s string) string {
 		case 't':
 			b.WriteByte('\t')
 			i += 2
-		case 'c', 'p', 'F', 'P', 'Z', 'z', 'k', 'a', 'j', 'g', 'O', 'o', 'b', 'x', 'w', 'h', 'v', 'D':
+		case 'c':
+			b.WriteString(joinMarker)
+			i += 2
+		case 'p', 'F', 'P', 'Z', 'z', 'k', 'a', 'j', 'g', 'O', 'o', 'b', 'x', 'w', 'h', 'v', 'D':
 			i += 2 + escapeSkip(s[i+2:], c)
 		case 'f':
 			i += 2 + fontSkip(s[i+2:])

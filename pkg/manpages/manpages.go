@@ -13,9 +13,12 @@ func Parse(input io.Reader) (string, error) {
 	}
 	mode := sniffDialect(src.lines)
 	engine := newEngine(src, nil)
-	w := newWriter(func(text string) string {
-		return engine.renderEscapes(engine.interpolate(text))
-	})
+	w := newWriter(
+		func(text string) string {
+			return markdownEscape(engine.renderEscapes(engine.interpolate(text)))
+		},
+		func(text string) string { return markdownEscape(text) },
+	)
 	if mode == modeMdoc {
 		m := newMdoc(w)
 		engine.sink = mdocSink{m: m, w: w}

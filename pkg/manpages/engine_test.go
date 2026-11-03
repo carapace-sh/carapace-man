@@ -179,7 +179,7 @@ func TestEscapesInText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"a-b", "dot", "'", "em: —", "tiny gap", "word1", "word2"}
+	want := []string{"a-b", "dot", "'", "em: —", "tiny gap", "word1 " + joinMarker, "word2"}
 	if len(sink.text) != len(want) {
 		t.Fatalf("line count: got %v", sink.text)
 	}

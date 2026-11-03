@@ -211,14 +211,22 @@ func (w *writer) mr(args []string) {
 	if len(args) == 0 {
 		return
 	}
-	text := w.render(args[0])
+	topic := w.render(args[0])
+	section := ""
+	trail := ""
 	if len(args) > 1 {
-		text += "(" + w.render(args[1]) + ")"
+		section = w.render(args[1])
 	}
 	if len(args) > 2 {
-		text += w.render(args[2])
+		trail = w.render(args[2])
 	}
-	w.inline(text, true)
+	target := "man://" + topic + "/" + section
+	visible := wrapFont('B', topic)
+	if section != "" {
+		visible += " (" + wrapFont('I', section) + ")"
+	}
+	visible += trail
+	w.inline("["+visible+"]("+target+")", true)
 }
 
 func (w *writer) linkStart(args []string) {

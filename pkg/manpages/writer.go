@@ -4,6 +4,8 @@ import (
 	"strings"
 )
 
+const joinMarker = ""
+
 type itemKind int
 
 const (
@@ -44,31 +46,53 @@ type writer struct {
 	pendingHead int
 
 	link *linkState
+	esc  func(string) string
+
+	xrefZone bool
+	sections int
 
 	lastKind itemKind
 	wrote    bool
 }
 
-func newWriter(render func(string) string) *writer {
-	return &writer{render: render}
+func newWriter(render func(string) string, esc func(string) string) *writer {
+	return &writer{render: render, esc: esc}
 }
 
 func wrapFont(kind byte, text string) string {
+	marker := false
+	if strings.HasSuffix(text, joinMarker) {
+		text = strings.TrimSuffix(text, joinMarker)
+		marker = true
+	}
+	var wrapped string
 	switch kind {
 	case 'B':
-		return "**" + text + "**"
+		wrapped = "**" + text + "**"
 	case 'I':
-		return "*" + text + "*"
+		wrapped = "*" + text + "*"
+	default:
+		wrapped = text
 	}
-	return text
+	if marker {
+		wrapped += joinMarker
+	}
+	return wrapped
 }
 
 func (w *writer) inline(seg string, space bool) {
+	if w.xrefZone || w.sections == 0 {
+		seg = linkify(seg)
+	}
 	if len(w.block) == 0 {
 		w.block = append(w.block, seg)
 		return
 	}
 	last := len(w.block) - 1
+	if strings.HasSuffix(w.block[last], joinMarker) {
+		w.block[last] = strings.TrimSuffix(w.block[last], joinMarker) + seg
+		return
+	}
 	if space {
 		w.block[last] += " " + seg
 		return
@@ -144,13 +168,18 @@ func (w *writer) Text(line string) {
 		w.tagStage = 1
 		return
 	}
-	w.inline(line, true)
+	if len(w.block) == 0 && w.item == itemNone && escapeLineStart(line) {
+		line = "\\" + line
+	}
+	w.inline(w.esc(line), true)
 }
 
 func (w *writer) heading(level int, text string) {
 	w.flushBlock()
 	w.flush(strings.Repeat("#", level)+" "+text, itemHeading, false)
 	w.item = itemNone
+	w.sections++
+	w.xrefZone = strings.EqualFold(text, "SEE ALSO")
 }
 
 func (w *writer) title(arguments []string) {
