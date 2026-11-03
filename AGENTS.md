@@ -168,8 +168,7 @@ There are no `*_test.go` files anywhere. `go test ./...` reports `[no test files
 ### `gopls` diagnostics (pre-existing, non-blocking)
 
 - `pkg/man/man.go:136` — `HasPrefix`+`TrimPrefix` can be `CutPrefix` (hint).
-- `pkg/man/manpage.go:57` — `bufio.Scanner` loop missing `scanner.Err()` check (warn).
-- `pkg/man/manpage.go:61` — inefficient string concat in `WriteString` (warn).
+- `pkg/man/manpage.go` uses the native `pkg/manpages` converter; the old Perl-pipeline warnings no longer apply.
 These are pre-existing and not caused by your changes unless you touch those lines.
 
 ## Naming & Style Patterns

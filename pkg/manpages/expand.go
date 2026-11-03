@@ -90,13 +90,40 @@ func newEngine(src *source, sink Sink) *Engine {
 	}
 }
 
-func (e *Engine) paragraphBreak() {
-	switch sink := e.sink.(type) {
-	case interface{ Break() }:
+func (e *Engine) lineBreak() {
+	if sink, ok := e.sink.(interface{ Break() }); ok {
 		sink.Break()
-	case interface{ Space(int) }:
-		sink.Space(1)
 	}
+}
+
+func (e *Engine) spaceBreak(args []string) {
+	value := 1
+	if len(args) > 0 {
+		if parsed := parseSpaceValue(args[0]); parsed > 0 {
+			value = parsed
+		}
+	}
+	if sink, ok := e.sink.(interface{ Space(int) }); ok {
+		sink.Space(value)
+	}
+}
+
+func parseSpaceValue(arg string) int {
+	digits := ""
+	for _, c := range arg {
+		if c < '0' || c > '9' {
+			break
+		}
+		digits += string(c)
+	}
+	if digits == "" {
+		return 0
+	}
+	value := 0
+	for _, c := range digits {
+		value = value*10 + int(c-'0')
+	}
+	return value
 }
 
 func (e *Engine) run() error {
@@ -172,8 +199,11 @@ func (e *Engine) dispatchControl(name, rest string, args []string, noBreak bool)
 		return nil
 	case "sy", "pi", "open", "write", "writec", "close", "cf", "lf", "nx":
 		return nil
-	case "sp", "br", "bp":
-		e.paragraphBreak()
+	case "sp":
+		e.spaceBreak(args)
+		return nil
+	case "br", "bp":
+		e.lineBreak()
 		return nil
 	case "ne", "fl":
 		return nil
