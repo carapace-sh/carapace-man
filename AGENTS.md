@@ -90,16 +90,21 @@ cmd/carapace-man/
 pkg/man/
   man.go                       # Location, Schemes, Hosts, Uids, Describe, Style, descibe
   command.go                   # cmd scheme handler (user specs + repo specs)
-  manpage.go                   # man scheme handler (shells out to `man` + perl man-to-md)
+  manpage.go                   # man scheme handler (native roff→markdown via pkg/manpages; `man` only locates the page)
   git.go                       # repo struct, clone/pull with functional options
   style.go                     # custom "carapace" glamour style, registered in init()
   db.go                        # bbolt lookup (cmdDB, describeDB), host index, inspect queries
   db_compile.go                # bbolt compilation (CompileSpec, CompileStatic, CompileManDir)
 pkg/actions/man/
   man.go                       # carapace completion actions (ActionUids, ActionInspectUids)
-third_party/github.com/mle86/man-to-md/
-  mantomd.go                   # go:embed of man-to-md.pl
-  man-to-md.pl                 # vendored Perl script (GPL-3), requires `perl` + `man`
+pkg/manpages/                 # native, MIT-licensed roff→markdown converter
+  reader.go / tokenize.go      # logical-line reader + control-line tokenization
+  expand.go / interpolate.go   # roff expansion engine (strings, macros, escapes)
+  condition.go                 # .if/.ie/.el + numeric expression evaluator
+  dialect.go / manpages.go     # man(7) vs mdoc(7) detection + Parse() entrypoint
+  writer.go / man7.go          # streaming markdown writer + man(7) macro table
+  mdoc7.go                     # mdoc(7) macro layer (lists, displays, inline macros)
+  xref.go / escape.go          # man:// cross-reference links + markdown escaping
 ```
 
 ### Control flow
@@ -107,7 +112,7 @@ third_party/github.com/mle86/man-to-md/
 1. `main.go` → `cmd.Execute()` → cobra dispatches to subcommand.
 2. Root command: parse UID → `man.Describe(uid, glamour opts...)` → dispatch by scheme → optionally `Style()` with glamour renderer → print.
 3. `update`: validate spec → `util.SpecDiff` (print) → `util.SplitTo` (write files, merging existing `documentation:`).
-4. `man-to-md`: `man --location <section> <name>` → open the gzipped roff file → filter from `.TH` → pipe through embedded Perl script → output markdown. Falls back to `<command> --help` on failure.
+4. `man-to-md`: `man --location <section> <name>` → open the roff file (in-process gzip) → `manpages.Parse` renders markdown. Falls back to `<command> --help` on failure. The old GPL Perl path (`--legacy`, `third_party/mle86/man-to-md`) was removed after one release cycle.
 5. `inspect`: open .db read-only → without uid: enumerate all scheme/host/uid pairs and print sorted list. With uid: `man.InspectDescribe` → optionally `Style()` → print. Supports `--style`/`--raw`/`--wrap` flags like the root command.
 
 ## Conventions & Gotchas
@@ -149,7 +154,7 @@ Prefer `split-to` / `update` for any real work.
 
 ### External runtime dependencies
 
-- `man-to-md` and the `man://` UID scheme require `man` and `perl` on `$PATH`.
+- the `man://` UID scheme requires `man` on `$PATH` (used only to locate the page); no `perl` dependency.
 - `sync` requires `git`.
 
 ### No tests

@@ -12,10 +12,10 @@ referenced, or incorporated while keeping the new converter **MIT licensed**.
 
 ## 1. The excluded vendor in this repo
 
-`third_party/github.com/mle86/man-to-md/` in carapace-man is **GPL-3.0** Perl:
-a macro-oriented `man(7)` reading engine, ~69★, last release 2020 (v0.17.0),
-author mle86. It was previously used via `go:embed` of `man-to-md.pl` in
-`pkg/man/manpage.go` (requires `perl` + `man` at runtime). It is:
+`third_party/github.com/mle86/man-to-md/` **was** GPL-3.0 Perl — a macro-oriented
+`man(7)` reading engine (~69★, last release 2020, v0.17.0, author mle86) used
+via `go:embed` of `man-to-md.pl`. The native `pkg/manpages` converter replaced
+it and the vendored tree has been deleted from the repo. It was:
 
 - **man(7) only** (no mdoc support);
 - GPL-3: **never port, translate, or vendor into the MIT converter**;
@@ -38,7 +38,7 @@ author mle86. It was previously used via `go:embed` of `man-to-md.pl` in
 | **unroff** | <https://github.com/rockola/unroff> (mirror) | permissive Oliver Laumann (BSD-like, attributed) | C+Scheme | Historical (1995) full troff->HTML; doc-quality reference. |
 | **troffcvt** | <http://www.snake.net/software/troffcvt/> (Debian salsa mirror) | **Public domain** | C | Legacy troff-to-HTML via tc2html and companion filters. |
 | **man2html (man-1.6g, Lucifredi)** | (Debian src) | **GPL-2.0+** | C | The classic man-db HTML renderer; **excluded**. |
-| **Carapace-family man-to-md (mle86)** | see §1 | **GPL-3.0** | Perl | **Excluded.** |
+| **Carapace-family man-to-md (mle86)** | see §1 | **GPL-3.0** | Perl | **Excluded and now deleted.** |
 | **sio/man** | <https://github.com/sio/man> | **Apache-2.0** | Go | Client for manpages.debian.org; uses groff — not a parser. |
 | **debiman** | <https://github.com/Debian/debiman> | **Apache-2.0** | Go | manpages.debian.org builder; delegates parsing to **mandoc**. Useful as an architecture reference for "Go orchestration + mandoc subprocess", not as a parser. |
 

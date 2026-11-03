@@ -20,12 +20,7 @@ var manToMdCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		legacy, err := cmd.Flags().GetBool("legacy")
-		if err != nil {
-			return err
-		}
-
-		output, err := manToMd(args[0], section, legacy)
+		output, err := man.ManToMd(args[0], section)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "man page not found, falling back to --help: %v\n", err)
 			return fallbackHelp(args[0])
@@ -33,13 +28,6 @@ var manToMdCmd = &cobra.Command{
 		fmt.Print(output)
 		return nil
 	},
-}
-
-func manToMd(name, section string, legacy bool) (string, error) {
-	if legacy {
-		return man.ManToMdLegacy(name, section)
-	}
-	return man.ManToMd(name, section)
 }
 
 func fallbackHelp(name string) error {
@@ -57,14 +45,6 @@ func init() {
 	rootCmd.AddCommand(manToMdCmd)
 
 	manToMdCmd.Flags().String("section", "", "man page section (e.g. 1, 5, 8)")
-	manToMdCmd.Flags().Bool("legacy", false, "use the vendored Perl converter")
-
-	carapace.Gen(manToMdCmd).FlagCompletion(
-		carapace.ActionMap{
-			"legacy": carapace.ActionValues("true", "false"),
-		},
-	)
-
 	carapace.Gen(manToMdCmd).PositionalCompletion(
 		carapace.ActionFiles(),
 	)

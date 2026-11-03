@@ -19,23 +19,3 @@ func TestManToMdNative(t *testing.T) {
 		}
 	}
 }
-
-func TestManToMdLegacy(t *testing.T) {
-	if _, err := ManToMd("ls", "1"); err != nil {
-		t.Skipf("man page not available: %v", err)
-	}
-	out, err := ManToMdLegacy("ls", "1")
-	if err != nil {
-		t.Skipf("legacy converter needs perl: %v", err)
-	}
-	if out == "" {
-		t.Error("legacy output empty")
-	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

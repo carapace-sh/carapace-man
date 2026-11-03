@@ -24,11 +24,11 @@ license landscape of existing converters.
 ## Licensing Constraint (critical)
 
 The converter must be **MIT licensed**. Never port or copy code from GPL-licensed
-tools (groff, mle86/man-to-md, pandoc, man2html). The vendored
-`third_party/github.com/mle86/man-to-md/` in the carapace-man repo is **GPL-3**
-and must not be ported; the converter replaces it. See
-[references/existing-tools.md](references/existing-tools.md) for the full license survey and
-clean-room guidance.
+tools (groff, mle86/man-to-md, pandoc, man2html). The GPL-3 Perl script that used to be vendored at
+`third_party/github.com/mle86/man-to-md/` was never ported and has been
+**removed** from the repo (the native `pkg/manpages` converter replaced
+it). See [references/existing-tools.md](references/existing-tools.md) for the full
+license survey and clean-room guidance.
 
 ## Sub-Resources
 
