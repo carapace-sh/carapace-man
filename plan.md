@@ -192,3 +192,24 @@ carapace-man mdbook <archive-dir> <book-dir>
   book, add a small linking step later if a hosted book is desired.
 - The corpus is per-page licensed (BSD/MIT/GPL/copyleft mix); never
   commit archive contents or the generated book to this repository.
+
+### Potential follow-up: chroma-based fence language detection
+
+The current fence language labels come from the hand-rolled heuristic in
+`pkg/manpages/syntax.go` (see `skills/manpages/references/markdown-mapping.md`).
+A better-calibrated option for the *book build tool only* is
+`github.com/alecthomas/chroma`'s content analysis (MIT, go-native;
+research and API semantics in
+`skills/manpages/references/chroma-analysis.md`):
+
+- `manpages.Parse` gains an optional `LanguageDetector func([]string) string`
+  hook that defaults to the internal heuristic; `pkg/mdbook` wires
+  `lexers.Analyse` into it (sample a page prefix, map the picked
+  lexer's `Config.Name`/aliases to a fence identifier, keep `console`
+  and plain-fence fallbacks).
+- Only users of the mdbook build pay the dependency and binary-size
+  cost (~few MB from the embedded lexer tables plus `regexp2/v2`);
+  `man-to-md`, `inspect` and library consumers of `Parse` keep the
+  zero-dependency heuristic output.
+- Non-goals: porting chroma analyser rules by hand (option C), changing
+  the `man://`/unlabeled-fence contract for terminal or UID contexts.
