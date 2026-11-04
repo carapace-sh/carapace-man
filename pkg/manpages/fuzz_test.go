@@ -3,6 +3,7 @@ package manpages
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // FuzzParse drives the full pipeline end-to-end on random roff input; the
@@ -28,6 +29,12 @@ func FuzzParse(f *testing.F) {
 		}
 		if leaked := directiveLeaksOutsideFences(out); len(leaked) > 0 {
 			t.Fatalf("directive leak %q for input %q", leaked[0], input)
+		}
+		if !utf8.ValidString(out) {
+			t.Fatalf("invalid UTF-8 output for input %q", input)
+		}
+		if strings.Contains(out, "\u0000") {
+			t.Fatalf("NUL byte survived for input %q", input)
 		}
 	})
 }

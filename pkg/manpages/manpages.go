@@ -1,12 +1,19 @@
 package manpages
 
 import (
+	"bytes"
 	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 // Parse converts a man(7) or mdoc(7) roff source to markdown.
-func Parse(input io.Reader) (string, error) {
+func Parse(inputStream io.Reader) (string, error) {
+	raw, err := io.ReadAll(inputStream)
+	if err != nil {
+		return "", err
+	}
+	input := bytes.NewReader(decodeRoffBytes(raw))
 	src, err := newSource(input)
 	if err != nil {
 		return "", err
@@ -46,6 +53,38 @@ func collapseBlankRuns(md string) string {
 		}
 		md = next
 	}
+}
+
+// decodeRoffBytes interprets the page source: valid UTF-8 passes through,
+// otherwise the file decodes as legacy ISO-8859-1 (a 1:1 byte-to-rune map),
+// which is the historical man page encoding.
+func decodeRoffBytes(raw []byte) []byte {
+	if utf8.Valid(raw) {
+		return stripControlBytes(raw)
+	}
+	runes := make([]rune, len(raw))
+	for i, b := range raw {
+		runes[i] = rune(b)
+	}
+	return stripControlBytes([]byte(string(runes)))
+}
+
+// stripControlBytes removes NUL, DEL and C0 control characters except tab,
+// newline, and carriage return; the markdown contract is UTF-8 text.
+func stripControlBytes(raw []byte) []byte {
+	out := make([]byte, 0, len(raw))
+	for _, c := range raw {
+		switch {
+		case c == 0x0b || c == 0x0c:
+			out = append(out, '\n')
+		case c == 0x09 || c == 0x0d || c == 0x0a:
+			out = append(out, c)
+		case c < 0x20 || c == 0x7f:
+		default:
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // mdocSink routes engine output: text into the writer, unknown macros into
