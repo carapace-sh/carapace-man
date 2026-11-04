@@ -43,10 +43,12 @@ Load the reference that matches your task. When in doubt, load multiple referenc
 | syntax.go, fence language label, detectLanguageFor, code fence language, console prompt detection, SYNOPSIS hint | [references/markdown-mapping.md](references/markdown-mapping.md) |
 | markdown output, mapping table, bold/italic/code, headings, blockquote, list mapping, escaping, `**`, `*`, backtick, hard line break, non-ASCII, HTML entity, mandoc -T markdown, mdoc_markdown, markup loss | [references/markdown-mapping.md](references/markdown-mapping.md) |
 | existing tools, mandoc, pandoc, man-to-md, man2md, roff-cli, ManT, license comparison, ISC, GPL-3, Apache-2.0, public domain, go-md2man, debiman, clean-room guidance, what can be reused, pod2man output | [references/existing-tools.md](references/existing-tools.md) |
+| chroma, lexer.Analyse, AnalyseText, LexerRegistry, analyser, regexp2, confidence scoring, first=true, analyser interface, dependency evaluation | [references/chroma-analysis.md](references/chroma-analysis.md) |
 | edge cases, corpus, probe, MANPAGES_PROBE, hang, crash, `.It` outside `Bl`, binary minus, tbl, eqn, pic, OSC-8, tty link, `.X'tty: link', NAME region linkify, approximations, tbl/data | [references/edge-cases.md](references/edge-cases.md) |
 
 ## Quick Guide
 
+- **Should we use chroma for fence language detection?** → [references/chroma-analysis.md](references/chroma-analysis.md)
 - **How does roff syntax work (control lines, requests, escapes, registers)?** → [references/roff-core.md](references/roff-core.md)
 - **What does macro `.X` in a man(7) page do?** → [references/man-macros.md](references/man-macros.md)
 - **What does macro `.Xx` in an mdoc(7) page do?** → [references/mdoc-macros.md](references/mdoc-macros.md)
