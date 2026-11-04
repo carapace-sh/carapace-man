@@ -16,14 +16,16 @@ func (e *Engine) renderEscapes(s string) string {
 		}
 	}
 	var b strings.Builder
+	runes := []rune(s)
 	i := 0
-	for i < len(s) {
-		if s[i] != '\\' || i+1 >= len(s) {
-			b.WriteByte(s[i])
+	isEscape := func(r rune) bool { return r == '\\' }
+	for i < len(runes) {
+		if !isEscape(runes[i]) || i+1 >= len(runes) {
+			b.WriteRune(runes[i])
 			i++
 			continue
 		}
-		c := s[i+1]
+		c := runes[i+1]
 		switch c {
 		case '\\':
 			b.WriteByte('\\')
@@ -46,18 +48,17 @@ func (e *Engine) renderEscapes(s string) string {
 			b.WriteString(joinMarker)
 			i += 2
 		case 'p', 'F', 'P', 'Z', 'z', 'k', 'a', 'j', 'g', 'O', 'o', 'b', 'x', 'w', 'h', 'v', 'D':
-			i += 2 + escapeSkip(s[i+2:], c)
+			i += 2 + escapeSkip(stringFrom(runes, i+2), byte(c))
 		case 'f':
-			i += 2 + fontSkip(s[i+2:])
+			i += 2 + fontSkip(stringFrom(runes, i+2))
 		case 's':
-			i += 2 + sizeSkip(s[i+2:])
+			i += 2 + sizeSkip(stringFrom(runes, i+2))
 		case 'm', 'M':
-			i += 2 + delimitedSkip(s[i+2:])
+			i += 2 + delimitedSkip(stringFrom(runes, i+2))
 		case 'n', '*', 'R', '$', 'N', 'V', 'A', 'B':
-			// leftover interpolation forms: drop escape and remainder marker
-			i += 2 + delimitedSkip(s[i+2:])
+			i += 2 + delimitedSkip(stringFrom(runes, i+2))
 		case 'C':
-			i += 2 + delimitedSkip(s[i+2:])
+			i += 2 + delimitedSkip(stringFrom(runes, i+2))
 		case 'X':
 			b.WriteString("X")
 			i += 2
@@ -65,10 +66,10 @@ func (e *Engine) renderEscapes(s string) string {
 			b.WriteByte('`')
 			i += 2
 		case '!', '?':
-			b.WriteByte(c)
+			b.WriteRune(c)
 			i += 2
 		case '(':
-			key := s[i+2:]
+			key := stringFrom(runes, i+2)
 			if len(key) >= 2 {
 				if glyph, ok := glyphs[key[:2]]; ok {
 					b.WriteString(glyph)
@@ -78,8 +79,8 @@ func (e *Engine) renderEscapes(s string) string {
 			}
 			i += 2
 		case '[':
-			if end := strings.IndexByte(s[i+2:], ']'); end >= 0 {
-				key := s[i+2 : i+2+end]
+			if end := strings.IndexRune(stringFrom(runes, i+2), ']'); end >= 0 {
+				key := stringFrom(runes, i+2)[:end]
 				if glyph, ok := glyphs[key]; ok {
 					b.WriteString(glyph)
 				} else {
@@ -90,12 +91,25 @@ func (e *Engine) renderEscapes(s string) string {
 			}
 			i += 2
 		default:
+			// unknown escape: drop the escape character, keep the rune
+			b.WriteRune(c)
 			i += 2
 		}
 	}
 	out := b.String()
 	out = ttyLinks(out)
 	return e.applyCharTranslations(out)
+}
+
+// stringFrom copies the rune slice tail as a string.
+func stringFrom(runes []rune, from int) string {
+	if from >= len(runes) {
+		return ""
+	}
+	if from < 0 {
+		from = 0
+	}
+	return string(runes[from:])
 }
 
 // ttyLinks converts groff's OSC-8 device extensions

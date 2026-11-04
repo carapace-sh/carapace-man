@@ -159,10 +159,14 @@ corpus: exit 0, no panic, no raw roff directives left in output; track
 
 ## Follow-up: archived manpages → mdbook (also the verification harness)
 
-After M6, a **man page archive** (roff sources collected locally: system
-pages, git/doc-suite pages, and suitable `man` URIs fetched explicitly)
-converts to an mdbook — a static site of all pages — which doubles as the
-verification test for the parser:
+After M6, a **man page archive** (roff sources collected locally, e.g.
+extracted from the kernel.org `man-pages-<version>.tar.xz` bundle or
+distro package sets, plus pages collected from `man://` lookups) converts
+to an mdbook — a static site of all pages — which doubles as the
+verification test for the parser. Fetching the archive stays outside the
+tool (documented `wget`/`tar` one-liner); a CI workflow on master that
+regenerates gh-pages from the book follows later, in the style of other
+carapace projects.
 
 ```bash
 carapace-man mdbook <archive-dir> <book-dir>
@@ -186,3 +190,5 @@ carapace-man mdbook <archive-dir> <book-dir>
   golden files alone can't give.
 - Output target (gitignored, CI artifact — not committed): rendered HTML
   book, add a small linking step later if a hosted book is desired.
+- The corpus is per-page licensed (BSD/MIT/GPL/copyleft mix); never
+  commit archive contents or the generated book to this repository.
