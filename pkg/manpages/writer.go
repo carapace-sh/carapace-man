@@ -50,8 +50,9 @@ type writer struct {
 		head int
 	}
 
-	link *linkState
-	esc  func(string) string
+	link        *linkState
+	lastSection string
+	esc         func(string) string
 
 	xrefZone bool
 	sections int
@@ -143,12 +144,22 @@ func (w *writer) fenceClose() {
 		return
 	}
 	body := strings.Join(w.code, "\n")
+	lang := detectLanguageFor(w.code, w.lastSection)
 	w.code = nil
 	w.fenced = false
 	if strings.TrimSpace(body) == "" {
 		return
 	}
-	w.flush("```\n"+body+"\n```", itemCode, false)
+	w.flush(wrapFence(lang, body), itemCode, false)
+}
+
+// wrapFence emits a fenced code block with an optional language label.
+func wrapFence(lang, body string) string {
+	fence := "```"
+	if lang != "" {
+		fence += lang
+	}
+	return fence + "\n" + body + "\n```"
 }
 
 // Text renders a text line from the engine into the open construct. Code
@@ -191,6 +202,7 @@ func (w *writer) heading(level int, text string) {
 	w.flush(strings.Repeat("#", level)+" "+text, itemHeading, false)
 	w.item = itemNone
 	w.sections++
+	w.lastSection = text
 	w.xrefZone = strings.EqualFold(text, "SEE ALSO")
 }
 

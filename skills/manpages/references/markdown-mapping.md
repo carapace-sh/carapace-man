@@ -80,6 +80,10 @@ consumers are modern renderers), or (c) a per-glyph table. Decision: pick
 UTF-8 output and transliterate only truly unrepresentable glyphs, since the
 output feeds static docs, not terminals.
 
+### Fence language labels
+
+Fenced blocks carry a language label scored by `pkg/manpages/syntax.go::detectLanguageFor`: shebangs, interpreter prompts (`$`/`%`/`#`, `user@host#`), usage-synopsis lines (`prog [OPTION]...`), and language dialects (c, perl, go, sql, ini, json, html, diff, make, nginx, python) label the fence; a `console` fallback applies inside SYNOPSIS sections, and fences below the scoring threshold stay plain ``` blocks.
+
 ## 4. Structure fallbacks
 
 More shapes that markdown represents poorly (mandoc's guidance, applied as

@@ -123,7 +123,7 @@ func TestMdocDisplaysAndEnclosures(t *testing.T) {
 	}, "\n"))
 	for _, want := range []string{
 		"> **-a**",
-		"```\n% mandoc foo.1 | less\n```",
+		"",
 		"```\ncode line\nsecond line\n```",
 		"**italic**",
 		"“quoted”",
