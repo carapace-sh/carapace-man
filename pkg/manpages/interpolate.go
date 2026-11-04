@@ -74,6 +74,10 @@ func (e *Engine) interpolateDepth(s string, depth int) string {
 	return b.String()
 }
 
+func isArgDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
 // stringRef parses a name following `\*` or `\n`: either a single character,
 // a two-character `(...`-style name, or a bracketed `[...]-style name (which
 // may carry parameters). It returns the name and the consumed byte count.
@@ -110,19 +114,10 @@ func argKey(rest string) string {
 		return ""
 	}
 	if rest[0] == '(' {
-		i := 1
-		digits := 0
-		for i < len(rest) && digits < 2 {
-			if rest[i] < '0' || rest[i] > '9' {
-				break
-			}
-			i++
-			digits++
+		if len(rest) >= 3 && isArgDigit(rest[1]) && isArgDigit(rest[2]) {
+			return rest[:3]
 		}
-		if !isNameSeparator(safeByte(rest, i)) && rest[i] >= '0' && rest[i] <= '9' {
-			i++
-		}
-		return rest[:i]
+		return ""
 	}
 	if rest[0] == '[' {
 		end := strings.IndexByte(rest, ']')
@@ -174,13 +169,6 @@ func (e *Engine) argOf(key string) string {
 		return ""
 	}
 	return ""
-}
-
-func safeByte(s string, i int) byte {
-	if i >= 0 && i < len(s) {
-		return s[i]
-	}
-	return 0
 }
 
 // registerAssign parses `\R'name ±expr'` and returns the register name, the

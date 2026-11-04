@@ -157,8 +157,10 @@ func (m *mdoc) inline(tokens []string) string {
 
 func (m *mdoc) rend(word, body string) string {
 	switch word {
-	case "Ar", "Pa", "Ev", "Dv", "Er", "Ad", "Fa", "Ft", "Va", "Vt", "Em":
+	case "Ar", "Pa", "Ad", "Fa", "Ft", "Va", "Vt", "Em":
 		return wrapFont('I', body)
+	case "Ev", "Dv", "Er":
+		return "`" + body + "`"
 	case "Cm", "Ic", "Ms", "Sy", "Cd", "Nm":
 		return wrapFont('B', body)
 	case "Li", "Tn":

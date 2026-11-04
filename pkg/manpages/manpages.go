@@ -33,7 +33,19 @@ func Parse(input io.Reader) (string, error) {
 		}
 		w.flushBlock()
 	}
-	return strings.TrimRight(w.out.String(), "\n") + "\n", nil
+	return collapseBlankRuns(strings.TrimRight(w.out.String(), "\n") + "\n"), nil
+}
+
+// collapseBlankRuns normalizes generated markdown to single blank lines
+// between blocks, absorbing separator doubling from titles and fences.
+func collapseBlankRuns(md string) string {
+	for {
+		next := strings.ReplaceAll(md, "\n\n\n", "\n\n")
+		if next == md {
+			return md
+		}
+		md = next
+	}
 }
 
 // mdocSink routes engine output: text into the writer, unknown macros into
