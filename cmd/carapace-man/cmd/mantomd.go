@@ -20,7 +20,6 @@ var manToMdCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
 		output, err := man.ManToMd(args[0], section)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "man page not found, falling back to --help: %v\n", err)
@@ -46,7 +45,6 @@ func init() {
 	rootCmd.AddCommand(manToMdCmd)
 
 	manToMdCmd.Flags().String("section", "", "man page section (e.g. 1, 5, 8)")
-
 	carapace.Gen(manToMdCmd).PositionalCompletion(
 		carapace.ActionFiles(),
 	)
