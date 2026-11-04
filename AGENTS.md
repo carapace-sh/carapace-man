@@ -36,8 +36,6 @@ carapace-man update --dry-run <spec> <dir>  # preview changes without writing
 
 carapace-man split-to <spec> <output-dir>   # split spec, preserve existing docs
 carapace-man spec-diff <spec> <existing-dir>   # report drift vs committed docs
-carapace-man man-to-md <command>            # convert system man page to markdown
-carapace-man man-to-md <command> --section 1
 
 carapace-man inspect <db>                   # list all UIDs in a compiled .db
 carapace-man inspect <db> <uid>             # render docs for a UID from a .db
@@ -81,7 +79,6 @@ cmd/carapace-man/
     update.go                  # composite: spec-diff + split-to, stdin support
     split.go / splitto.go      # split spec into per-subcommand files
     specdiff.go                # diff fresh spec vs existing cmd/ docs
-    mantomd.go                 # system man page → markdown (falls back to --help)
     inspect.go                 # inspect compiled .db: list UIDs or render a UID's docs
     compile.go                 # compile specs/static docs/man-dir into bbolt .db
     util/
@@ -112,7 +109,7 @@ pkg/manpages/                 # native, MIT-licensed roff→markdown converter
 1. `main.go` → `cmd.Execute()` → cobra dispatches to subcommand.
 2. Root command: parse UID → `man.Describe(uid, glamour opts...)` → dispatch by scheme → optionally `Style()` with glamour renderer → print.
 3. `update`: validate spec → `util.SpecDiff` (print) → `util.SplitTo` (write files, merging existing `documentation:`).
-4. `man-to-md`: `man --location <section> <name>` → open the roff file (in-process gzip) → `manpages.Parse` renders markdown. Falls back to `<command> --help` on failure. The old GPL Perl path (`--legacy`, `third_party/mle86/man-to-md`) was removed after one release cycle.
+4. `man://` UIDs: `manpage(uid)` resolves `man --location <section> <name>` → opens the roff file (in-process gzip) → `manpages.Parse` renders markdown. The old GPL Perl path (`--legacy`, `third_party/mle86/man-to-md`) was removed after one release cycle; the former standalone `man-to-md` command (with its `<command> --help` fallback) has since been dropped in favor of the `man://` scheme.
 5. `inspect`: open .db read-only → without uid: enumerate all scheme/host/uid pairs and print sorted list. With uid: `man.InspectDescribe` → optionally `Style()` → print. Supports `--style`/`--raw`/`--wrap` flags like the root command.
 
 ## Conventions & Gotchas
