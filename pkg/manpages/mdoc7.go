@@ -183,7 +183,7 @@ func (m *mdoc) enclose(word, inner string) string {
 	case "Po", "Pc", "Pq":
 		return "(" + inner + ")"
 	case "Ao", "Ac", "Aq":
-		return "<" + inner + ">"
+		return "&lt;" + inner + "&gt;"
 	case "Bro", "Brc", "Brq":
 		return "{" + inner + "}"
 	case "Eo", "Ec":
@@ -261,10 +261,10 @@ func (m *mdoc) macro(name string, args []string, noBreak bool) {
 	case "In":
 		text := m.inline(args)
 		if m.synopsis {
-			m.w.inline(wrapFont('B', "#include <"+text+">"), true)
+			m.w.inline(wrapFont('B', "#include &lt;"+text+"&gt;"), true)
 			return
 		}
-		m.w.inline("<*"+text+"*>", true)
+		m.w.inline("&lt;*"+text+"*&gt;", true)
 	case "Fn":
 		if len(args) == 0 {
 			return

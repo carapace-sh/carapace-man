@@ -38,6 +38,7 @@ manpages skill references, with the state of each in `pkg/manpages`.
 | `Name(section)` in pre-section content (NAME region) and SEE ALSO | carapace UID ecosystem | linkified with `man://topic/section` (bold-marker aware; section tokens must match `\d`, `0`, `n`, `l`, optional `p`, `3p`, `2p`) |
 | `.TH` date/source | conventional man-mm-dd formatting | captured into an HTML comment metadata header |
 | Markdown-hostile text | `<`, `>`, `\`, line-leading `#`, `+`, `-`, `*`, `=` and `1.`-style prefixes | metacharacter-escaped (`escape.go`), `<`/`>` become entities |
+| mdoc angle/enclosure delimiters | `.Aq x`, `.Ao x Ac`, `.In stdio.h` (both inside and outside SYNOPSIS) | the delimiters added by `mdoc7.go` are themselves entity-escaped (`&lt;`/`&gt;`) — the inner text was escaped but the surrounding `<`/`>` leaked raw, tripping mdbook's "unclosed HTML tag" linter (found via a ~34k-page mdbook build) |
 | `\c` no-space joins | `.B "a\\c"` + next word | carried through font wraps via an internal marker and joined without space |
 | User macros without expansions defined by pod2man | `.IX`/`.IX Header` | dropped as undefined macros (mandoc-compatible) |
 | `.ig` with a defined end macro | `.ig END` | body skipped; missing terminator drops to EOF (no error) |
