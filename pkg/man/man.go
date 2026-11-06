@@ -9,8 +9,8 @@ import (
 	"charm.land/glamour/v2"
 	"github.com/carapace-sh/carapace/pkg/xdg"
 	"github.com/mattn/go-isatty"
+	"go.yaml.in/yaml/v3"
 	"golang.org/x/term"
-	"gopkg.in/yaml.v3"
 )
 
 func Location() (string, error) {

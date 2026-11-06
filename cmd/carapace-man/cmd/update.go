@@ -8,7 +8,7 @@ import (
 	"github.com/carapace-sh/carapace-man/cmd/carapace-man/cmd/util"
 	"github.com/carapace-sh/carapace/pkg/command"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 var updateCmd = &cobra.Command{
