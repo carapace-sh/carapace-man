@@ -8,7 +8,7 @@ import (
 
 	"github.com/carapace-sh/carapace-man/pkg/man"
 	"github.com/carapace-sh/carapace/pkg/command"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func SplitTo(path string, outputDir string) error {

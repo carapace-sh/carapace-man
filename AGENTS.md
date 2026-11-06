@@ -40,6 +40,9 @@ carapace-man spec-diff <spec> <existing-dir>   # report drift vs committed docs
 carapace-man inspect <db>                   # list all UIDs in a compiled .db
 carapace-man inspect <db> <uid>             # render docs for a UID from a .db
 carapace-man inspect <db> <uid> --raw       # raw output (no styling)
+
+carapace-man compile <file|dir|-> <db>      # compile spec (stdin `-`), or man root dir, into .db
+carapace-man compile <file|dir|-> <db> --amend  # update db: processed hosts replaced, others preserved
 ```
 
 Typical doc-update workflow (from the `man-docs` skill / `update.go` long help):
@@ -80,7 +83,7 @@ cmd/carapace-man/
     split.go / splitto.go      # split spec into per-subcommand files
     specdiff.go                # diff fresh spec vs existing cmd/ docs
     inspect.go                 # inspect compiled .db: list UIDs or render a UID's docs
-    compile.go                 # compile specs/static docs/man-dir into bbolt .db
+    compile.go                 # compile specs (file/stdin) or a man root dir into bbolt .db
     util/
       split.go / splitto.go    # actual split logic (split.go = legacy, writes to tmpdir)
       specdiff.go              # DiffResult collection + PrintDiff
@@ -91,7 +94,7 @@ pkg/man/
   git.go                       # repo struct, clone/pull with functional options
   style.go                     # custom "carapace" glamour style, registered in init()
   db.go                        # bbolt lookup (cmdDB, describeDB), host index, inspect queries
-  db_compile.go                # bbolt compilation (CompileSpec, CompileStatic, CompileManDir)
+  db_compile.go                # bbolt compilation (CompileSpec, CompileSpecReader, CompileManDir; CompileOption/WithAmend)
 pkg/actions/man/
   man.go                       # carapace completion actions (ActionUids, ActionInspectUids)
 pkg/manpages/                 # native, MIT-licensed roff→markdown converter

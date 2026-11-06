@@ -8,7 +8,7 @@ import (
 
 	"github.com/carapace-sh/carapace/pkg/command"
 	"github.com/carapace-sh/carapace/pkg/xdg"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func cmd_user(uid *url.URL) (string, error) {
