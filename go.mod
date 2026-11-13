@@ -1,10 +1,10 @@
 module github.com/carapace-sh/carapace-man
 
-go 1.26.0
+go 1.26.7
 
 require (
 	charm.land/glamour/v2 v2.0.1
-	charm.land/lipgloss/v2 v2.0.6
+	charm.land/lipgloss/v2 v2.1.0
 	github.com/carapace-sh/carapace v1.18.1
 	github.com/carapace-sh/carapace-spec v1.10.2
 	github.com/mattn/go-isatty v0.0.24
