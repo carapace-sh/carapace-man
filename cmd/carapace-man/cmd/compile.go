@@ -9,19 +9,19 @@ import (
 )
 
 var compileCmd = &cobra.Command{
-	Use:     "compile <file|dir|-> <db>",
+	Use:     "compile <file|dir|-> <db|.db.gz>",
 	Short:   "compile specs and man docs into a bbolt database",
 	GroupID: "main",
 	Long: `Compile man documentation specs into a bbolt database.
 
 Compile a single carapace-spec command spec (recognized by its
 schema header or command-like content):
-  carapace-man compile <spec.yaml> <output.db>           # one spec → one host
-  carapace-man compile - <output.db>                     # spec from stdin → one host
+  carapace-man compile <spec.yaml> <output.db|.db.gz>   # one spec → one host
+  carapace-man compile - <output.db|.db.gz>             # spec from stdin → one host
 
 Compile an entire man/ directory tree (man/cmd/<host>/*.yaml for the
 cmd scheme, <scheme>/<host>/<host>.yaml for generic schemes):
-  carapace-man compile <man-dir> <output.db>
+  carapace-man compile <man-dir> <output.db|.db.gz>
 
 The database is rebuilt from scratch unless --amend is given, in which
 case processed hosts are replaced and others are preserved.`,
@@ -55,6 +55,6 @@ func init() {
 
 	carapace.Gen(compileCmd).PositionalCompletion(
 		carapace.ActionFiles(),
-		carapace.ActionFiles(".db"),
+		carapace.ActionFiles(".db", ".db.gz"),
 	)
 }

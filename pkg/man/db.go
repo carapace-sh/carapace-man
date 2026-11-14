@@ -52,17 +52,37 @@ func buildHostIndex() (hostIndex, error) {
 		if err != nil {
 			continue
 		}
+		seenBases := map[string]bool{}
+		// prefer plain .db over .db.gz for the same base name in a search path
+		names := make([]string, 0, len(entries))
 		for _, entry := range entries {
-			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".db") {
-				dbPaths = append(dbPaths, filepath.Join(sp, entry.Name()))
+			if entry.IsDir() || !isDBFile(entry.Name()) {
+				continue
 			}
+			names = append(names, entry.Name())
+		}
+		sort.Slice(names, func(i, j int) bool {
+			baseI := strings.TrimSuffix(strings.TrimSuffix(names[i], ".gz"), ".db")
+			baseJ := strings.TrimSuffix(strings.TrimSuffix(names[j], ".gz"), ".db")
+			if baseI != baseJ {
+				return baseI < baseJ
+			}
+			return !isGzipDB(names[i]) && isGzipDB(names[j])
+		})
+		for _, name := range names {
+			base := strings.TrimSuffix(strings.TrimSuffix(name, ".gz"), ".db")
+			if seenBases[base] {
+				continue
+			}
+			seenBases[base] = true
+			dbPaths = append(dbPaths, filepath.Join(sp, name))
 		}
 	}
 	sort.Strings(dbPaths)
 
 	index := hostIndex{}
 	for _, dbPath := range dbPaths {
-		db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+		db, err := openReadDB(dbPath)
 		if err != nil {
 			continue
 		}
@@ -103,7 +123,7 @@ func lookupDB(scheme, host string, fn func(*bolt.Bucket) error) (bool, error) {
 // (scheme, host) host bucket. Returns false if the scheme or host bucket
 // doesn't exist in the DB.
 func lookupDBFile(dbPath, scheme, host string, fn func(*bolt.Bucket) error) (bool, error) {
-	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+	db, err := openReadDB(dbPath)
 	if err != nil {
 		return false, err
 	}
@@ -314,7 +334,7 @@ func splitCmdKey(key string) (path, field string, ok bool) {
 
 // InspectSchemes returns all scheme names in a specific DB file.
 func InspectSchemes(dbPath string) ([]string, error) {
-	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+	db, err := openReadDB(dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +356,7 @@ func InspectSchemes(dbPath string) ([]string, error) {
 
 // InspectHosts returns all host names for a scheme in a specific DB file.
 func InspectHosts(dbPath, scheme string) ([]string, error) {
-	db, err := bolt.Open(dbPath, 0o400, &bolt.Options{ReadOnly: true})
+	db, err := openReadDB(dbPath)
 	if err != nil {
 		return nil, err
 	}
