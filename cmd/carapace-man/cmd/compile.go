@@ -10,9 +10,9 @@ import (
 
 var compileCmd = &cobra.Command{
 	Use:     "compile <file|dir|-> <db>",
-	Short:   "compile specs and man docs into a bbolt database",
+	Short:   "compile specs and man docs into a badger database",
 	GroupID: "main",
-	Long: `Compile man documentation specs into a bbolt database.
+	Long: `Compile man documentation specs into a badger database (zstd compressed).
 
 Compile a single carapace-spec command spec (recognized by its
 schema header or command-like content):

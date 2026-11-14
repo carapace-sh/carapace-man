@@ -15,9 +15,9 @@ import (
 
 var inspectCmd = &cobra.Command{
 	Use:     "inspect <db> [uid]",
-	Short:   "inspect contents of a compiled bbolt database",
+	Short:   "inspect contents of a compiled badger database",
 	GroupID: "main",
-	Long: `Inspect a compiled bbolt documentation database.
+	Long: `Inspect a compiled badger documentation database.
 
 Without a uid, lists all UIDs in the database:
 
