@@ -122,11 +122,11 @@ func actionOther(scheme string) carapace.Action {
 	})
 }
 
-// ActionInspectUids completes UIDs from a specific compiled .db file.
+// ActionInspectUids completes UIDs from a specific compiled .db/.db.gz file.
 // The db path is taken from the first positional argument (args[0]).
 //
-//	carapace.db (cmd://git/commit?flag=message)
-//	carapace.db (git://color/normal)
+//	carapace.db[.gz] (cmd://git/commit?flag=message)
+//	carapace.db[.gz] (git://color/normal)
 func ActionInspectUids(dbPath string) carapace.Action {
 	return carapace.ActionCallback(func(c carapace.Context) carapace.Action {
 		return actionInspectUids(dbPath)
