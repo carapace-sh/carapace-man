@@ -119,46 +119,18 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 // name field if present.
 func CompileHostDir(hostDir, dbPath string, opts ...CompileOption) error {
 	o := newCompileOptions(opts)
-	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
-	if err != nil {
-		return err
-	}
-	db, err := bolt.Open(workPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-
-	updateErr := compileHostDirIntoDB(db, hostDir, o)
-	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
-		updateErr = closeErr
-	}
-	if updateErr != nil {
-		return updateErr
-	}
-	return finalize()
+	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
+		return compileHostDirIntoDB(db, hostDir, o)
+	})
 }
 
 // CompileStatic compiles a static scheme doc (map[string]string YAML) into a bbolt DB.
 // If a value starts with "./", it's resolved as a file path relative to the YAML file's directory.
 func CompileStatic(yamlPath, scheme, host, dbPath string, opts ...CompileOption) error {
 	o := newCompileOptions(opts)
-	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
-	if err != nil {
-		return err
-	}
-	db, err := bolt.Open(workPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-
-	updateErr := compileStaticFileIntoDB(db, yamlPath, scheme, host, o)
-	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
-		updateErr = closeErr
-	}
-	if updateErr != nil {
-		return updateErr
-	}
-	return finalize()
+	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
+		return compileStaticFileIntoDB(db, yamlPath, scheme, host, o)
+	})
 }
 
 // CompileManDir compiles an entire man/ directory tree into a single bbolt DB.
@@ -166,16 +138,7 @@ func CompileStatic(yamlPath, scheme, host, dbPath string, opts ...CompileOption)
 // man/<scheme>/<host>/<host>.yaml → static scheme, each file = one host
 func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
 	o := newCompileOptions(opts)
-	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
-	if err != nil {
-		return err
-	}
-	db, err := bolt.Open(workPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-
-	updateErr := func() error {
+	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
 		entries, err := os.ReadDir(manDir)
 		if err != nil {
 			return err
@@ -222,14 +185,7 @@ func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
 			}
 		}
 		return nil
-	}()
-	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
-		updateErr = closeErr
-	}
-	if updateErr != nil {
-		return updateErr
-	}
-	return finalize()
+	})
 }
 
 func compileHostDirIntoDB(db *bolt.DB, hostDir string, o compileOptions) error {
@@ -328,33 +284,19 @@ func compileStaticFileIntoDB(db *bolt.DB, yamlPath, scheme, host string, o compi
 }
 
 func compileCmd(cmd command.Command, host, dbPath string, o compileOptions) error {
-	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
-	if err != nil {
-		return err
-	}
-	db, err := bolt.Open(workPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-
-	updateErr := db.Update(func(tx *bolt.Tx) error {
-		schemeBucket, err := tx.CreateBucketIfNotExists([]byte("cmd"))
-		if err != nil {
-			return err
-		}
-		hostBucket, err := createHostBucket(schemeBucket, host, o)
-		if err != nil {
-			return err
-		}
-		return writeCmdDocs(hostBucket, cmd, "")
+	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
+		return db.Update(func(tx *bolt.Tx) error {
+			schemeBucket, err := tx.CreateBucketIfNotExists([]byte("cmd"))
+			if err != nil {
+				return err
+			}
+			hostBucket, err := createHostBucket(schemeBucket, host, o)
+			if err != nil {
+				return err
+			}
+			return writeCmdDocs(hostBucket, cmd, "")
+		})
 	})
-	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
-		updateErr = closeErr
-	}
-	if updateErr != nil {
-		return updateErr
-	}
-	return finalize()
 }
 
 // createHostBucket replaces the given host bucket so that a recompiled host
@@ -434,50 +376,36 @@ func writeCmdDocs(bucket *bolt.Bucket, cmd command.Command, prefix string) error
 }
 
 func compileStaticMap(m map[string]string, scheme, host, dbPath, baseDir string, o compileOptions) error {
-	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
-	if err != nil {
-		return err
-	}
-	db, err := bolt.Open(workPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-
-	updateErr := db.Update(func(tx *bolt.Tx) error {
-		schemeBucket, err := tx.CreateBucketIfNotExists([]byte(scheme))
-		if err != nil {
-			return err
-		}
-		hostBucket, err := createHostBucket(schemeBucket, host, o)
-		if err != nil {
-			return err
-		}
-		for key, value := range m {
-			if value == "" {
-				continue
+	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
+		return db.Update(func(tx *bolt.Tx) error {
+			schemeBucket, err := tx.CreateBucketIfNotExists([]byte(scheme))
+			if err != nil {
+				return err
 			}
-			if suffix, ok := strings.CutPrefix(value, "./"); ok {
-				resolved := filepath.Join(baseDir, suffix)
-				content, err := os.ReadFile(resolved)
-				if err != nil {
-					return fmt.Errorf("resolve %s: %w", value, err)
+			hostBucket, err := createHostBucket(schemeBucket, host, o)
+			if err != nil {
+				return err
+			}
+			for key, value := range m {
+				if value == "" {
+					continue
 				}
-				if err := hostBucket.Put([]byte(key), content); err != nil {
-					return err
-				}
-			} else {
-				if err := hostBucket.Put([]byte(key), []byte(value)); err != nil {
-					return err
+				if suffix, ok := strings.CutPrefix(value, "./"); ok {
+					resolved := filepath.Join(baseDir, suffix)
+					content, err := os.ReadFile(resolved)
+					if err != nil {
+						return fmt.Errorf("resolve %s: %w", value, err)
+					}
+					if err := hostBucket.Put([]byte(key), content); err != nil {
+						return err
+					}
+				} else {
+					if err := hostBucket.Put([]byte(key), []byte(value)); err != nil {
+						return err
+					}
 				}
 			}
-		}
-		return nil
+			return nil
+		})
 	})
-	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
-		updateErr = closeErr
-	}
-	if updateErr != nil {
-		return updateErr
-	}
-	return finalize()
 }

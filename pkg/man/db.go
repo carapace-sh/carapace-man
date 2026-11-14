@@ -52,10 +52,30 @@ func buildHostIndex() (hostIndex, error) {
 		if err != nil {
 			continue
 		}
+		seenBases := map[string]bool{}
+		// prefer plain .db over .db.gz for the same base name in a search path
+		names := make([]string, 0, len(entries))
 		for _, entry := range entries {
-			if !entry.IsDir() && isDBFile(entry.Name()) {
-				dbPaths = append(dbPaths, filepath.Join(sp, entry.Name()))
+			if entry.IsDir() || !isDBFile(entry.Name()) {
+				continue
 			}
+			names = append(names, entry.Name())
+		}
+		sort.Slice(names, func(i, j int) bool {
+			baseI := strings.TrimSuffix(strings.TrimSuffix(names[i], ".gz"), ".db")
+			baseJ := strings.TrimSuffix(strings.TrimSuffix(names[j], ".gz"), ".db")
+			if baseI != baseJ {
+				return baseI < baseJ
+			}
+			return !isGzipDB(names[i]) && isGzipDB(names[j])
+		})
+		for _, name := range names {
+			base := strings.TrimSuffix(strings.TrimSuffix(name, ".gz"), ".db")
+			if seenBases[base] {
+				continue
+			}
+			seenBases[base] = true
+			dbPaths = append(dbPaths, filepath.Join(sp, name))
 		}
 	}
 	sort.Strings(dbPaths)

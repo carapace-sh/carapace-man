@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/carapace-sh/carapace/pkg/xdg"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -28,13 +29,18 @@ func dbCacheDir() (string, error) {
 	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {
 		return filepath.Join(dir, "carapace", "man", "db"), nil
 	}
-	cacheDir, err := os.UserCacheDir()
+	cacheDir, err := xdg.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(cacheDir, "carapace", "man", "db"), nil
 }
 
+// cachePrefix returns the cache directory and filename prefix for a source DB.
+// Cache entries are keyed by basename (with .db.gz/.gz stripped), assuming no
+// name clashes across different source paths. Freshness is derived from the
+// source file's mtime and size (hashed), so timestamp-preserving replacements
+// with identical mtime and size may reuse a stale cached copy.
 func cachePrefix(src string) (string, string, error) {
 	cacheDir, err := dbCacheDir()
 	if err != nil {
@@ -259,6 +265,36 @@ func prepareWriteDB(target string, amend bool) (workPath string, finalize func()
 		return compressGzipDB(workPath, target)
 	}
 	return workPath, finalize, nil
+}
+
+// withWritableDB prepares a writable bbolt database, runs fn against it, and
+// finalizes the target on success. For .db.gz targets the working file is
+// removed if fn or finalization fails.
+func withWritableDB(target string, amend bool, fn func(*bolt.DB) error) error {
+	workPath, finalize, err := prepareWriteDB(target, amend)
+	if err != nil {
+		return err
+	}
+
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		if isGzipDB(target) {
+			_ = os.Remove(workPath)
+		}
+		return err
+	}
+
+	runErr := fn(db)
+	if closeErr := db.Close(); closeErr != nil && runErr == nil {
+		runErr = closeErr
+	}
+	if runErr != nil {
+		if isGzipDB(target) {
+			_ = os.Remove(workPath)
+		}
+		return runErr
+	}
+	return finalize()
 }
 
 func decompressToPath(src, dst string) error {
