@@ -1,10 +1,8 @@
 package man
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,17 +31,6 @@ func newCompileOptions(opts []CompileOption) compileOptions {
 		opt(&o)
 	}
 	return o
-}
-
-// truncateDB removes an existing database file unless amending.
-func truncateDB(dbPath string, amend bool) error {
-	if amend {
-		return nil
-	}
-	if err := os.Remove(dbPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
-	}
-	return nil
 }
 
 const commandSchemaURL = "https://carapace.sh/schemas/command.json"
@@ -102,9 +89,6 @@ func CompileSpec(specPath, dbPath string, opts ...CompileOption) error {
 	if host == "" {
 		host = strings.TrimSuffix(filepath.Base(specPath), ".yaml")
 	}
-	if err := truncateDB(dbPath, o.amend); err != nil {
-		return err
-	}
 	return compileCmd(cmd, host, dbPath, o)
 }
 
@@ -123,9 +107,6 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 	if host == "" {
 		host, _, _ = strings.Cut(cmd.Name, " ")
 	}
-	if err := truncateDB(dbPath, o.amend); err != nil {
-		return err
-	}
 	return compileCmd(cmd, host, dbPath, o)
 }
 
@@ -137,22 +118,126 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 // (the part after <host>. with dots replaced by slashes), or from the spec's
 // name field if present.
 func CompileHostDir(hostDir, dbPath string, opts ...CompileOption) error {
-	return compileHostDir(hostDir, dbPath, newCompileOptions(opts))
+	o := newCompileOptions(opts)
+	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
+	if err != nil {
+		return err
+	}
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		return err
+	}
+
+	updateErr := compileHostDirIntoDB(db, hostDir, o)
+	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
+		updateErr = closeErr
+	}
+	if updateErr != nil {
+		return updateErr
+	}
+	return finalize()
 }
 
-func compileHostDir(hostDir, dbPath string, o compileOptions) error {
+// CompileStatic compiles a static scheme doc (map[string]string YAML) into a bbolt DB.
+// If a value starts with "./", it's resolved as a file path relative to the YAML file's directory.
+func CompileStatic(yamlPath, scheme, host, dbPath string, opts ...CompileOption) error {
+	o := newCompileOptions(opts)
+	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
+	if err != nil {
+		return err
+	}
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		return err
+	}
+
+	updateErr := compileStaticFileIntoDB(db, yamlPath, scheme, host, o)
+	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
+		updateErr = closeErr
+	}
+	if updateErr != nil {
+		return updateErr
+	}
+	return finalize()
+}
+
+// CompileManDir compiles an entire man/ directory tree into a single bbolt DB.
+// man/cmd/<host>/*.yaml → cmd scheme, each subdirectory = one host
+// man/<scheme>/<host>/<host>.yaml → static scheme, each file = one host
+func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
+	o := newCompileOptions(opts)
+	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
+	if err != nil {
+		return err
+	}
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		return err
+	}
+
+	updateErr := func() error {
+		entries, err := os.ReadDir(manDir)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			scheme := entry.Name()
+			schemeDir := filepath.Join(manDir, scheme)
+
+			if scheme == "cmd" {
+				hosts, err := os.ReadDir(schemeDir)
+				if err != nil {
+					return fmt.Errorf("cmd: %w", err)
+				}
+				for _, hostDir := range hosts {
+					if !hostDir.IsDir() {
+						continue
+					}
+					hostPath := filepath.Join(schemeDir, hostDir.Name())
+					if err := compileHostDirIntoDB(db, hostPath, o); err != nil {
+						return fmt.Errorf("cmd/%s: %w", hostDir.Name(), err)
+					}
+				}
+			} else {
+				hosts, err := os.ReadDir(schemeDir)
+				if err != nil {
+					return fmt.Errorf("%s: %w", scheme, err)
+				}
+				for _, hostDir := range hosts {
+					if !hostDir.IsDir() {
+						continue
+					}
+					host := hostDir.Name()
+					yamlFile := filepath.Join(schemeDir, host, host+".yaml")
+					if _, err := os.Stat(yamlFile); err != nil {
+						continue
+					}
+					if err := compileStaticFileIntoDB(db, yamlFile, scheme, host, o); err != nil {
+						return fmt.Errorf("%s/%s: %w", scheme, host, err)
+					}
+				}
+			}
+		}
+		return nil
+	}()
+	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
+		updateErr = closeErr
+	}
+	if updateErr != nil {
+		return updateErr
+	}
+	return finalize()
+}
+
+func compileHostDirIntoDB(db *bolt.DB, hostDir string, o compileOptions) error {
 	host := filepath.Base(hostDir)
 	entries, err := os.ReadDir(hostDir)
 	if err != nil {
 		return err
 	}
-
-	db, err := bolt.Open(dbPath, 0o644, nil)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
 	return db.Update(func(tx *bolt.Tx) error {
 		schemeBucket, err := tx.CreateBucketIfNotExists([]byte("cmd"))
 		if err != nil {
@@ -176,15 +261,12 @@ func compileHostDir(hostDir, dbPath string, o compileOptions) error {
 				fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", entry.Name(), err)
 				continue
 			}
-			// Derive the path prefix from the filename: <host>.<sub.path>.yaml → <sub/path>
-			// e.g. git.commit.diff.yaml → commit/diff, git.yaml → "" (root)
 			filename := UnmangleFilename(strings.TrimSuffix(entry.Name(), ".yaml"))
 			var prefix string
 			if filename != host {
 				remaining := strings.TrimPrefix(filename, host+".")
 				prefix = strings.ReplaceAll(remaining, ".", "/")
 			}
-			// If the spec has a name, use it to derive the path prefix instead
 			if cmd.Name != "" {
 				nameParts := strings.Fields(cmd.Name)
 				if len(nameParts) > 0 && nameParts[0] == host {
@@ -203,13 +285,7 @@ func compileHostDir(hostDir, dbPath string, o compileOptions) error {
 	})
 }
 
-// CompileStatic compiles a static scheme doc (map[string]string YAML) into a bbolt DB.
-// If a value starts with "./", it's resolved as a file path relative to the YAML file's directory.
-func CompileStatic(yamlPath, scheme, host, dbPath string, opts ...CompileOption) error {
-	return compileStaticFile(yamlPath, scheme, host, dbPath, newCompileOptions(opts))
-}
-
-func compileStaticFile(yamlPath, scheme, host, dbPath string, o compileOptions) error {
+func compileStaticFileIntoDB(db *bolt.DB, yamlPath, scheme, host string, o compileOptions) error {
 	content, err := os.ReadFile(yamlPath)
 	if err != nil {
 		return err
@@ -219,73 +295,49 @@ func compileStaticFile(yamlPath, scheme, host, dbPath string, o compileOptions) 
 		return err
 	}
 	baseDir := filepath.Dir(yamlPath)
-	return compileStaticMap(m, scheme, host, dbPath, baseDir, o)
-}
-
-// CompileManDir compiles an entire man/ directory tree into a single bbolt DB.
-// man/cmd/<host>/*.yaml → cmd scheme, each subdirectory = one host
-// man/<scheme>/<host>/<host>.yaml → static scheme, each file = one host
-func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
-	o := newCompileOptions(opts)
-	if err := truncateDB(dbPath, o.amend); err != nil {
-		return err
-	}
-	entries, err := os.ReadDir(manDir)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
+	return db.Update(func(tx *bolt.Tx) error {
+		schemeBucket, err := tx.CreateBucketIfNotExists([]byte(scheme))
+		if err != nil {
+			return err
 		}
-		scheme := entry.Name()
-		schemeDir := filepath.Join(manDir, scheme)
-
-		if scheme == "cmd" {
-			hosts, err := os.ReadDir(schemeDir)
-			if err != nil {
-				return fmt.Errorf("cmd: %w", err)
+		hostBucket, err := createHostBucket(schemeBucket, host, o)
+		if err != nil {
+			return err
+		}
+		for key, value := range m {
+			if value == "" {
+				continue
 			}
-			for _, hostDir := range hosts {
-				if !hostDir.IsDir() {
-					continue
+			if suffix, ok := strings.CutPrefix(value, "./"); ok {
+				resolved := filepath.Join(baseDir, suffix)
+				content, err := os.ReadFile(resolved)
+				if err != nil {
+					return fmt.Errorf("resolve %s: %w", value, err)
 				}
-				hostPath := filepath.Join(schemeDir, hostDir.Name())
-				if err := compileHostDir(hostPath, dbPath, o); err != nil {
-					return fmt.Errorf("cmd/%s: %w", hostDir.Name(), err)
+				if err := hostBucket.Put([]byte(key), content); err != nil {
+					return err
 				}
-			}
-		} else {
-			hosts, err := os.ReadDir(schemeDir)
-			if err != nil {
-				return fmt.Errorf("%s: %w", scheme, err)
-			}
-			for _, hostDir := range hosts {
-				if !hostDir.IsDir() {
-					continue
-				}
-				host := hostDir.Name()
-				yamlFile := filepath.Join(schemeDir, host, host+".yaml")
-				if _, err := os.Stat(yamlFile); err != nil {
-					continue
-				}
-				if err := compileStaticFile(yamlFile, scheme, host, dbPath, o); err != nil {
-					return fmt.Errorf("%s/%s: %w", scheme, host, err)
+			} else {
+				if err := hostBucket.Put([]byte(key), []byte(value)); err != nil {
+					return err
 				}
 			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func compileCmd(cmd command.Command, host, dbPath string, o compileOptions) error {
-	db, err := bolt.Open(dbPath, 0o644, nil)
+	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		return err
+	}
 
-	return db.Update(func(tx *bolt.Tx) error {
+	updateErr := db.Update(func(tx *bolt.Tx) error {
 		schemeBucket, err := tx.CreateBucketIfNotExists([]byte("cmd"))
 		if err != nil {
 			return err
@@ -296,6 +348,13 @@ func compileCmd(cmd command.Command, host, dbPath string, o compileOptions) erro
 		}
 		return writeCmdDocs(hostBucket, cmd, "")
 	})
+	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
+		updateErr = closeErr
+	}
+	if updateErr != nil {
+		return updateErr
+	}
+	return finalize()
 }
 
 // createHostBucket replaces the given host bucket so that a recompiled host
@@ -375,13 +434,16 @@ func writeCmdDocs(bucket *bolt.Bucket, cmd command.Command, prefix string) error
 }
 
 func compileStaticMap(m map[string]string, scheme, host, dbPath, baseDir string, o compileOptions) error {
-	db, err := bolt.Open(dbPath, 0o644, nil)
+	workPath, finalize, err := prepareWriteDB(dbPath, o.amend)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	db, err := bolt.Open(workPath, 0o644, nil)
+	if err != nil {
+		return err
+	}
 
-	return db.Update(func(tx *bolt.Tx) error {
+	updateErr := db.Update(func(tx *bolt.Tx) error {
 		schemeBucket, err := tx.CreateBucketIfNotExists([]byte(scheme))
 		if err != nil {
 			return err
@@ -411,4 +473,11 @@ func compileStaticMap(m map[string]string, scheme, host, dbPath, baseDir string,
 		}
 		return nil
 	})
+	if closeErr := db.Close(); closeErr != nil && updateErr == nil {
+		updateErr = closeErr
+	}
+	if updateErr != nil {
+		return updateErr
+	}
+	return finalize()
 }

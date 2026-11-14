@@ -14,19 +14,19 @@ import (
 )
 
 var inspectCmd = &cobra.Command{
-	Use:     "inspect <db> [uid]",
+	Use:     "inspect <db|.db.gz> [uid]",
 	Short:   "inspect contents of a compiled bbolt database",
 	GroupID: "main",
 	Long: `Inspect a compiled bbolt documentation database.
 
 Without a uid, lists all UIDs in the database:
 
-  carapace-man inspect carapace.db
+  carapace-man inspect carapace.db[.gz]
 
 With a uid, renders the documentation for that uid:
 
-  carapace-man inspect carapace.db cmd://git/commit
-  carapace-man inspect carapace.db git://color/normal`,
+  carapace-man inspect carapace.db[.gz] cmd://git/commit
+  carapace-man inspect carapace.db[.gz] git://color/normal`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dbPath := args[0]
@@ -130,7 +130,7 @@ func init() {
 	})
 
 	carapace.Gen(inspectCmd).PositionalCompletion(
-		carapace.ActionFiles(".db"),
+		carapace.ActionFiles(".db", ".db.gz"),
 		carapace.ActionCallback(func(c carapace.Context) carapace.Action {
 			if len(c.Args) == 0 {
 				return carapace.ActionMessage("db argument required")
