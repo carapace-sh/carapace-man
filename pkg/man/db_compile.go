@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/carapace-sh/carapace/pkg/command"
-	shoco "github.com/ekapratama93/go-shoco"
 	bolt "go.etcd.io/bbolt"
 	"go.yaml.in/yaml/v3"
 )
@@ -312,8 +311,19 @@ func createHostBucket(schemeBucket *bolt.Bucket, host string, o compileOptions) 
 	return schemeBucket.CreateBucketIfNotExists([]byte(host))
 }
 
+func compressedValue(value []byte) []byte {
+	if len(value) == 0 {
+		return value
+	}
+	compressed := dbModel.Compress(value)
+	if len(compressed) < len(value) {
+		return compressed
+	}
+	return value
+}
+
 func putCompressed(bucket *bolt.Bucket, key string, value string) error {
-	return bucket.Put([]byte(key), shoco.Compress([]byte(value)))
+	return bucket.Put([]byte(key), compressedValue([]byte(value)))
 }
 
 func writeCmdDocs(bucket *bolt.Bucket, cmd command.Command, prefix string) error {
@@ -405,11 +415,11 @@ func compileStaticMap(m map[string]string, scheme, host, dbPath, baseDir string,
 				if err != nil {
 					return fmt.Errorf("resolve %s: %w", value, err)
 				}
-				if err := hostBucket.Put([]byte(key), shoco.Compress(content)); err != nil {
+				if err := hostBucket.Put([]byte(key), compressedValue(content)); err != nil {
 					return err
 				}
 			} else {
-				if err := hostBucket.Put([]byte(key), shoco.Compress([]byte(value))); err != nil {
+				if err := hostBucket.Put([]byte(key), compressedValue([]byte(value))); err != nil {
 					return err
 				}
 			}

@@ -131,14 +131,17 @@ func decompressDoc(val []byte) (string, error) {
 	if val == nil {
 		return "", nil
 	}
-	out, err := shoco.Decompress(val)
-	if err == nil {
+	if out, err := dbModel.Decompress(val); err == nil {
 		return string(out), nil
+	} else if !errors.Is(err, shoco.ErrInvalid) {
+		return "", err
 	}
-	if errors.Is(err, shoco.ErrInvalid) {
-		return string(val), nil
+	if out, err := shoco.Decompress(val); err == nil {
+		return string(out), nil
+	} else if !errors.Is(err, shoco.ErrInvalid) {
+		return "", err
 	}
-	return "", err
+	return string(val), nil
 }
 
 // cmdDB looks up a cmd:// UID from compiled bbolt DBs.
