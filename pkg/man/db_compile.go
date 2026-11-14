@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/carapace-sh/carapace/pkg/command"
+	shoco "github.com/ekapratama93/go-shoco"
 	bolt "go.etcd.io/bbolt"
 	"go.yaml.in/yaml/v3"
 )
@@ -311,6 +312,10 @@ func createHostBucket(schemeBucket *bolt.Bucket, host string, o compileOptions) 
 	return schemeBucket.CreateBucketIfNotExists([]byte(host))
 }
 
+func putCompressed(bucket *bolt.Bucket, key string, value string) error {
+	return bucket.Put([]byte(key), shoco.Compress([]byte(value)))
+}
+
 func writeCmdDocs(bucket *bolt.Bucket, cmd command.Command, prefix string) error {
 	for _, sub := range cmd.Commands {
 		subPrefix := prefix
@@ -329,44 +334,44 @@ func writeCmdDocs(bucket *bolt.Bucket, cmd command.Command, prefix string) error
 	}
 
 	if cmd.Documentation.Command != "" {
-		if err := bucket.Put([]byte(keyPrefix+"command"), []byte(cmd.Documentation.Command)); err != nil {
+		if err := putCompressed(bucket, keyPrefix+"command", cmd.Documentation.Command); err != nil {
 			return err
 		}
 	}
 	for flag, doc := range cmd.Documentation.Flag {
 		if doc != "" {
-			if err := bucket.Put([]byte(keyPrefix+"flag/"+flag), []byte(doc)); err != nil {
+			if err := putCompressed(bucket, keyPrefix+"flag/"+flag, doc); err != nil {
 				return err
 			}
 		}
 	}
 	for i, doc := range cmd.Documentation.Positional {
 		if doc != "" {
-			if err := bucket.Put([]byte(keyPrefix+fmt.Sprintf("positional/%d", i)), []byte(doc)); err != nil {
+			if err := putCompressed(bucket, keyPrefix+fmt.Sprintf("positional/%d", i), doc); err != nil {
 				return err
 			}
 		}
 	}
 	if cmd.Documentation.PositionalAny != "" {
-		if err := bucket.Put([]byte(keyPrefix+"positionalany"), []byte(cmd.Documentation.PositionalAny)); err != nil {
+		if err := putCompressed(bucket, keyPrefix+"positionalany", cmd.Documentation.PositionalAny); err != nil {
 			return err
 		}
 	}
 	for i, doc := range cmd.Documentation.Dash {
 		if doc != "" {
-			if err := bucket.Put([]byte(keyPrefix+fmt.Sprintf("dash/%d", i)), []byte(doc)); err != nil {
+			if err := putCompressed(bucket, keyPrefix+fmt.Sprintf("dash/%d", i), doc); err != nil {
 				return err
 			}
 		}
 	}
 	if cmd.Documentation.DashAny != "" {
-		if err := bucket.Put([]byte(keyPrefix+"dashany"), []byte(cmd.Documentation.DashAny)); err != nil {
+		if err := putCompressed(bucket, keyPrefix+"dashany", cmd.Documentation.DashAny); err != nil {
 			return err
 		}
 	}
 	for name, doc := range cmd.Examples {
 		if doc != "" {
-			if err := bucket.Put([]byte(keyPrefix+"example/"+name), []byte(doc)); err != nil {
+			if err := putCompressed(bucket, keyPrefix+"example/"+name, doc); err != nil {
 				return err
 			}
 		}
@@ -400,11 +405,11 @@ func compileStaticMap(m map[string]string, scheme, host, dbPath, baseDir string,
 				if err != nil {
 					return fmt.Errorf("resolve %s: %w", value, err)
 				}
-				if err := hostBucket.Put([]byte(key), content); err != nil {
+				if err := hostBucket.Put([]byte(key), shoco.Compress(content)); err != nil {
 					return err
 				}
 			} else {
-				if err := hostBucket.Put([]byte(key), []byte(value)); err != nil {
+				if err := hostBucket.Put([]byte(key), shoco.Compress([]byte(value))); err != nil {
 					return err
 				}
 			}

@@ -1,6 +1,7 @@
 package man
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/carapace-sh/carapace/pkg/xdg"
+	shoco "github.com/ekapratama93/go-shoco"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -125,6 +127,20 @@ func lookupDBFile(dbPath, scheme, host string, fn func(*bolt.Bucket) error) (boo
 	return found, err
 }
 
+func decompressDoc(val []byte) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+	out, err := shoco.Decompress(val)
+	if err == nil {
+		return string(out), nil
+	}
+	if errors.Is(err, shoco.ErrInvalid) {
+		return string(val), nil
+	}
+	return "", err
+}
+
 // cmdDB looks up a cmd:// UID from compiled bbolt DBs.
 // Returns ("", false, nil) if not found in any DB (fall through to YAML).
 func cmdDB(uid *url.URL) (string, bool, error) {
@@ -144,9 +160,14 @@ func cmdDB(uid *url.URL) (string, bool, error) {
 	var result string
 	found, err := lookupDB("cmd", uid.Host, func(bucket *bolt.Bucket) error {
 		val := bucket.Get([]byte(key))
-		if val != nil {
-			result = string(val)
+		if val == nil {
+			return nil
 		}
+		dec, err := decompressDoc(val)
+		if err != nil {
+			return err
+		}
+		result = dec
 		return nil
 	})
 	if err != nil {
@@ -166,9 +187,14 @@ func describeDB(uid *url.URL) (string, bool, error) {
 	var result string
 	found, err := lookupDB(uid.Scheme, uid.Host, func(bucket *bolt.Bucket) error {
 		val := bucket.Get([]byte(key))
-		if val != nil {
-			result = string(val)
+		if val == nil {
+			return nil
 		}
+		dec, err := decompressDoc(val)
+		if err != nil {
+			return err
+		}
+		result = dec
 		return nil
 	})
 	if err != nil {
@@ -398,9 +424,14 @@ func InspectDescribe(dbPath string, uid *url.URL) (string, bool, error) {
 			key = strings.TrimPrefix(uid.Path, "/")
 		}
 		val := bucket.Get([]byte(key))
-		if val != nil {
-			result = string(val)
+		if val == nil {
+			return nil
 		}
+		dec, err := decompressDoc(val)
+		if err != nil {
+			return err
+		}
+		result = dec
 		return nil
 	})
 	if err != nil {
