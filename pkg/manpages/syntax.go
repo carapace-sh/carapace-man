@@ -40,6 +40,8 @@ var scoreRules = []scoreRule{
 	// c / c++ family
 	{regexp.MustCompile(`^#include\b`), 3, "c"},
 	{regexp.MustCompile(`^\s*(?:typedef|struct|union|enum)\b`), 2, "c"},
+	{regexp.MustCompile(`^\s*(?:[A-Za-z_][\w\s\*]*\s+)?\*?[A-Za-z_]\w+\s*\(\s*$`), 2, "c"},
+	{regexp.MustCompile(`^\s*(?:const\s+|unsigned\s+|signed\s+|struct\s+|enum\s+|union\s+|long\s+|short\s+|register\s+|volatile\s+|static\s+|extern\s+)*[A-Za-z_][\w\s\*]*\*?\s*[A-Za-z_]\w*\s*(?:,|\)\s*;)\s*(?:/\*.*\*/|//.*)?$`), 1, "c"},
 	{regexp.MustCompile(`^\s*[A-Za-z_][\w\s\*]*\b[A-Za-z_]\w*\s*;\s*(?:/\*.*\*/|//.*)?$`), 1, "c"},
 	{regexp.MustCompile(`^\s*[A-Za-z_][\w.<>]*\s+(\*?[a-z]\w*)\s*\(((?:[^()]|\([^()]*\))*)\w*\)(\s*;)?\s*$`), 2, "c"},
 	{regexp.MustCompile(`\b(?:int|void|char)\b.*\([^()]*\)\s*{`), 2, "c"},
@@ -84,7 +86,7 @@ var scoreRules = []scoreRule{
 	// make
 	{regexp.MustCompile(`^\s*\.PHONY\b`), 3, "make"},
 	{regexp.MustCompile(`^[A-Za-z0-9_./-]+(?:\s+[A-Za-z0-9_./-]+)*\s*:(?:\s*$|\s+[A-Za-z0-9_./$()%+.,-]+(?:\s+[A-Za-z0-9_./$()%+.,-]+)*\s*$)`), 1, "make"},
-	{regexp.MustCompile(`^\t\S`), 1, "make"},
+	{regexp.MustCompile(`^\t[^#\s].*`), 1, "make"},
 	{regexp.MustCompile(`\$\([A-Za-z0-9_]+\)`), 1, "make"},
 
 	// sql

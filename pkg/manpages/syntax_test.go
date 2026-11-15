@@ -21,6 +21,7 @@ func TestDetectLanguage(t *testing.T) {
 		{"c struct", "typedef struct {\n  unsigned long size;\n} meta;\n", "c"},
 		{"c typedef struct comments", "typedef struct {\n    int displayed_index;\t/* which buffer is being displayed */\n    int update_action;\t/* Undefined, Background, Untouched, Copied */\n    Multibuffer *buffers;\t/* Buffers */\n} XmbufWindowAttributes;\n", "c"},
 		{"c typedef struct simple", "typedef struct {\n    int update_hint;\t/* Frequent, Intermittent, Static */\n} XmbufSetWindowAttributes;\n", "c"},
+		{"c prototypes", "#include <X11/extensions/shape.h>\nBool XShapeQueryExtension (\n\tDisplay *dpy,\n\tint *event_basep,\n\tint *error_basep);\nStatus XShapeQueryVersion (\n\tDisplay *dpy,\n\tint *major_versionp,\n\tint *minor_versionp);\n", "c"},
 		{"cpp class", "#include <string>\nnamespace demo {\nclass Widget {\npublic:\n  void run();\n};\n}\n", "cpp"},
 		{"perl shebang", "#!/usr/bin/perl\nuse strict;\nmy $x = 1;\n", "perl"},
 		{"perl vars", "my $self = shift;\nour $VERSION = '1.0';\nuse POSIX qw(strftime);\n", "perl"},
