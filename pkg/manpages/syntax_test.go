@@ -19,6 +19,8 @@ func TestDetectLanguage(t *testing.T) {
 		{"usage line", "ls [OPTION]... [FILE]...\n", "console"},
 		{"c include", "#include <stdio.h>\nint main(void) {\n  printf(\"hi\");\n  return 0;\n}\n", "c"},
 		{"c struct", "typedef struct {\n  unsigned long size;\n} meta;\n", "c"},
+		{"c typedef struct comments", "typedef struct {\n    int displayed_index;\t/* which buffer is being displayed */\n    int update_action;\t/* Undefined, Background, Untouched, Copied */\n    Multibuffer *buffers;\t/* Buffers */\n} XmbufWindowAttributes;\n", "c"},
+		{"c typedef struct simple", "typedef struct {\n    int update_hint;\t/* Frequent, Intermittent, Static */\n} XmbufSetWindowAttributes;\n", "c"},
 		{"perl shebang", "#!/usr/bin/perl\nuse strict;\nmy $x = 1;\n", "perl"},
 		{"perl vars", "my $self = shift;\nour $VERSION = '1.0';\nuse POSIX qw(strftime);\n", "perl"},
 		{"python shebang", "#!/usr/bin/python3\nimport os\n\ndef main():\n  pass\n", "python"},
