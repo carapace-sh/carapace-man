@@ -28,11 +28,11 @@ var scoreRules = []scoreRule{
 
 	// c family
 	{regexp.MustCompile(`^#include\b`), 3, "c"},
-	{regexp.MustCompile(`^\s*(?:typedef|struct|union|enum)\s+(?:[A-Za-z_]\w*)?(?:\s*{)?\s*$`), 2, "c"},
-	{regexp.MustCompile(`\b(?:int|long|char|void|double|float|unsigned)\b[^;,{}]*[` + "`\"`" + `]*[;,)]?\s*$`), 1, "c"},
+	{regexp.MustCompile(`^\s*(?:typedef|struct|union|enum)\b`), 2, "c"},
+	{regexp.MustCompile(`^\s*[A-Za-z_][\w\s\*]*\b[A-Za-z_]\w*\s*;\s*(?:/\*.*\*/|//.*)?$`), 1, "c"},
 	{regexp.MustCompile(`^\s*[A-Za-z_][\w.<>]*\s+(\*?[a-z]\w*)\s*\(((?:[^()]|\([^()]*\))*)\w*\)(\s*;)?\s*$`), 2, "c"},
 	{regexp.MustCompile(`\b(?:int|void|char)\b.*\([^()]*\)\s*{`), 2, "c"},
-	{regexp.MustCompile(`^}\s*$`), 1, "c"},
+	{regexp.MustCompile(`^}\s*(?:[A-Za-z_]\w*\s*)?;\s*$`), 1, "c"},
 	{regexp.MustCompile(`^.\s*$`), 0, ""},
 	// script / interpreter dialects
 	{regexp.MustCompile(`^\s*(?:my|our|local)\s+\$\w+`), 3, "perl"},
