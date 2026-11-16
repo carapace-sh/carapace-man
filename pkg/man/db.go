@@ -13,22 +13,23 @@ import (
 )
 
 // dbSearchPaths returns the directories where compiled .db files are searched.
-// Uses $XDG_CONFIG_HOME/carapace/man/ (alongside the YAML man/ tree).
-// Can be overridden with CARAPACE_MAN_DB_PATH (colon-separated paths).
+// User config has highest priority, followed by system data directories in order.
 func dbSearchPaths() ([]string, error) {
-	if env := os.Getenv("CARAPACE_MAN_DB_PATH"); env != "" {
-		paths := strings.Split(env, string(os.PathListSeparator))
-		for i := range paths {
-			paths[i] = filepath.ToSlash(paths[i])
-		}
-		return paths, nil
-	}
-
 	configDir, err := xdg.UserConfigDir()
 	if err != nil {
 		return nil, err
 	}
-	return []string{fmt.Sprintf("%v/carapace/man", configDir)}, nil
+
+	paths := []string{filepath.ToSlash(filepath.Join(configDir, "carapace", "man"))}
+
+	dataDirs, err := xdg.DataDirs()
+	if err != nil {
+		return nil, err
+	}
+	for _, dir := range dataDirs {
+		paths = append(paths, filepath.ToSlash(filepath.Join(dir, "carapace", "man")))
+	}
+	return paths, nil
 }
 
 // hostIndex maps (scheme, host) → db file path.
@@ -39,7 +40,9 @@ func indexKey(scheme, host string) string {
 }
 
 // buildHostIndex scans all .db files in the search paths and builds
-// a (scheme, host) → dbPath index. First DB wins on conflicts.
+// a (scheme, host) → dbPath index. Search paths are checked in priority order
+// (user config first, then system data dirs); within a path plain .db is
+// preferred over .db.gz for the same base name. First DB wins on conflicts.
 func buildHostIndex() (hostIndex, error) {
 	searchPaths, err := dbSearchPaths()
 	if err != nil {
@@ -78,7 +81,6 @@ func buildHostIndex() (hostIndex, error) {
 			dbPaths = append(dbPaths, filepath.Join(sp, name))
 		}
 	}
-	sort.Strings(dbPaths)
 
 	index := hostIndex{}
 	for _, dbPath := range dbPaths {

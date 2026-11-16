@@ -37,8 +37,8 @@ func dbCacheDir() (string, error) {
 }
 
 // cachePrefix returns the cache directory and filename prefix for a source DB.
-// Cache entries are keyed by basename (with .db.gz/.gz stripped), assuming no
-// name clashes across different source paths. Freshness is derived from the
+// Cache entries are keyed by source path and basename so databases with the same
+// name from different locations do not collide. Freshness is derived from the
 // source file's mtime and size (hashed), so timestamp-preserving replacements
 // with identical mtime and size may reuse a stale cached copy.
 func cachePrefix(src string) (string, string, error) {
@@ -46,9 +46,14 @@ func cachePrefix(src string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+	abs, err := filepath.Abs(src)
+	if err != nil {
+		abs = src
+	}
 	base := strings.TrimSuffix(filepath.Base(src), ".db.gz")
 	base = strings.TrimSuffix(base, ".gz")
-	prefix := base + "."
+	sum := sha1.Sum([]byte(filepath.ToSlash(abs)))
+	prefix := base + "." + hex.EncodeToString(sum[:8]) + "."
 	return cacheDir, prefix, nil
 }
 
