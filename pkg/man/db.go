@@ -12,8 +12,8 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// dbLocation returns the directory where compiled .db files are searched.
-// Uses $XDG_CONFIG_HOME/carapace/man/db/ (alongside the YAML man/ tree).
+// dbSearchPaths returns the directories where compiled .db files are searched.
+// Uses $XDG_CONFIG_HOME/carapace/man/ (alongside the YAML man/ tree).
 // Can be overridden with CARAPACE_MAN_DB_PATH (colon-separated paths).
 func dbSearchPaths() ([]string, error) {
 	if env := os.Getenv("CARAPACE_MAN_DB_PATH"); env != "" {
@@ -28,7 +28,7 @@ func dbSearchPaths() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []string{fmt.Sprintf("%v/carapace/man/db", configDir)}, nil
+	return []string{fmt.Sprintf("%v/carapace/man", configDir)}, nil
 }
 
 // hostIndex maps (scheme, host) → db file path.

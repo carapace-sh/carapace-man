@@ -27,13 +27,13 @@ func isDBFile(name string) bool {
 
 func dbCacheDir() (string, error) {
 	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {
-		return filepath.Join(dir, "carapace", "man", "db"), nil
+		return filepath.Join(dir, "carapace", "man"), nil
 	}
 	cacheDir, err := xdg.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(cacheDir, "carapace", "man", "db"), nil
+	return filepath.Join(cacheDir, "carapace", "man"), nil
 }
 
 // cachePrefix returns the cache directory and filename prefix for a source DB.
