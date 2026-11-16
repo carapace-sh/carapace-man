@@ -12,8 +12,8 @@ github.com/aymanbagabas/go-udiff v0.4.1 h1:OEIrQ8maEeDBXQDoGCbbTTXYJMYRCRO1fnodZ
 github.com/aymanbagabas/go-udiff v0.4.1/go.mod h1:0L9PGwj20lrtmEMeyw4WKJ/TMyDtvAoK9bf2u/mNo3w=
 github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuPk=
 github.com/aymerick/douceur v0.2.0/go.mod h1:wlT5vV2O3h55X9m7iVYN0TBM0NH/MmbLnd30/FjWUq4=
-github.com/carapace-sh/carapace v1.18.1 h1:KfjKFpQXF0eYSl53qYWJTVXy5ZmlnUxyaQw2tan05Zw=
-github.com/carapace-sh/carapace v1.18.1/go.mod h1:8uVmChnqwPIViNJ+Db6U5JXjM6Eb9b0+g4YctZgtQRw=
+github.com/carapace-sh/carapace v1.18.2 h1:LrnlU9kMOqnaeVp/Iqmsl2rCVJ13C9E2DQenFXznR8s=
+github.com/carapace-sh/carapace v1.18.2/go.mod h1:/YNH4iLD7Gf8qjkwnetq4/v+u5pInb4QDPbszoI0hKI=
 github.com/carapace-sh/carapace-pflag v1.1.0 h1:uB33wch8ADjP878NadQnbZ5vyROcj/Ac+wUQKMcIrQM=
 github.com/carapace-sh/carapace-pflag v1.1.0/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/carapace-sh/carapace-shlex/v2 v2.1.4 h1:v6YFX1MqaSQSzISZN1sa28Y6aFD4zGXiMkg4xJkAMI0=
