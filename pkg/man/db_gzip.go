@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -25,26 +26,29 @@ func isDBFile(name string) bool {
 	return strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".db.gz")
 }
 
-func dbCacheDir() (string, error) {
+func dbCacheDirs() []string {
+	dirs := make([]string, 0, 3)
 	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {
-		return filepath.Join(dir, "carapace", "man"), nil
+		dirs = append(dirs, filepath.Join(dir, "carapace", "man"))
+	} else if cacheDir, err := xdg.UserCacheDir(); err == nil {
+		dirs = append(dirs, filepath.Join(cacheDir, "carapace", "man"))
 	}
-	cacheDir, err := xdg.UserCacheDir()
-	if err != nil {
-		return "", err
+	if tmp := os.TempDir(); tmp != "" {
+		dirs = append(dirs, filepath.Join(tmp, fmt.Sprintf("carapace-man-%d", os.Getuid())))
 	}
-	return filepath.Join(cacheDir, "carapace", "man"), nil
+	return dirs
 }
 
-// cachePrefix returns the cache directory and filename prefix for a source DB.
-// Cache entries are keyed by source path and basename so databases with the same
-// name from different locations do not collide. Freshness is derived from the
-// source file's mtime and size (hashed), so timestamp-preserving replacements
-// with identical mtime and size may reuse a stale cached copy.
-func cachePrefix(src string) (string, string, error) {
-	cacheDir, err := dbCacheDir()
-	if err != nil {
-		return "", "", err
+// cachePrefix returns the cache directory candidates and filename prefix for a
+// source DB. Cache entries are keyed by source path and basename so databases
+// with the same name from different locations do not collide. Freshness is
+// derived from the source file's mtime and size (hashed), so
+// timestamp-preserving replacements with identical mtime and size may reuse a
+// stale cached copy.
+func cachePrefix(src string) ([]string, string, error) {
+	cacheDirs := dbCacheDirs()
+	if len(cacheDirs) == 0 {
+		return nil, "", fmt.Errorf("no cache directory available")
 	}
 	abs, err := filepath.Abs(src)
 	if err != nil {
@@ -54,7 +58,7 @@ func cachePrefix(src string) (string, string, error) {
 	base = strings.TrimSuffix(base, ".gz")
 	sum := sha1.Sum([]byte(filepath.ToSlash(abs)))
 	prefix := base + "." + hex.EncodeToString(sum[:8]) + "."
-	return cacheDir, prefix, nil
+	return cacheDirs, prefix, nil
 }
 
 func cacheFileName(prefix string, info fs.FileInfo) string {
@@ -139,29 +143,37 @@ func ensureDecompressedDB(src string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cacheDir, prefix, err := cachePrefix(src)
+	cacheDirs, prefix, err := cachePrefix(src)
 	if err != nil {
 		return "", err
 	}
-	cachePath, err := findFreshCache(cacheDir, prefix, info)
-	if err != nil {
-		return "", err
-	}
-	if cachePath != "" {
-		return cachePath, nil
-	}
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
-		return "", err
-	}
-	target := filepath.Join(cacheDir, filepath.Base(cacheFileName(prefix, info)))
-	if err := decompressGzipDB(src, target); err != nil {
-		// another process may have created a fresh cache concurrently
-		if fresh, ferr := findFreshCache(cacheDir, prefix, info); ferr == nil && fresh != "" {
-			return fresh, nil
+	for _, cacheDir := range cacheDirs {
+		if cachePath, err := findFreshCache(cacheDir, prefix, info); err == nil && cachePath != "" {
+			return cachePath, nil
 		}
-		return "", err
 	}
-	return target, nil
+
+	var lastErr error
+	for _, cacheDir := range cacheDirs {
+		if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+			lastErr = err
+			continue
+		}
+		target := filepath.Join(cacheDir, filepath.Base(cacheFileName(prefix, info)))
+		if err := decompressGzipDB(src, target); err != nil {
+			lastErr = err
+			// another process may have created a fresh cache concurrently
+			if fresh, ferr := findFreshCache(cacheDir, prefix, info); ferr == nil && fresh != "" {
+				return fresh, nil
+			}
+			continue
+		}
+		return target, nil
+	}
+	if lastErr != nil {
+		return "", lastErr
+	}
+	return "", fmt.Errorf("failed to prepare decompressed cache for %s", src)
 }
 
 // openReadDB opens a database file read-only. For .db.gz files it uses a

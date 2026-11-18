@@ -3,6 +3,7 @@ package man
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/carapace-sh/carapace"
@@ -97,25 +98,35 @@ func actionOther(scheme string) carapace.Action {
 			}
 			return carapace.ActionValues(hosts...).Suffix("/") // TODO support host-only (no suffix)
 		default:
-			location, err := man.Location()
-			if err != nil {
-				return carapace.ActionMessage(err.Error())
+			seen := map[string]bool{}
+			vals := make([]string, 0)
+
+			if location, err := man.Location(); err == nil {
+				content, err := os.ReadFile(fmt.Sprintf("%v/%v/%v/%v.yaml", location, scheme, c.Parts[0], c.Parts[0])) // TODO move to man
+				if err == nil {
+					var entries map[string]string
+					if err := yaml.Unmarshal(content, &entries); err == nil {
+						for key := range entries {
+							if !seen[key] {
+								seen[key] = true
+								vals = append(vals, key)
+							}
+						}
+					}
+				}
 			}
 
-			content, err := os.ReadFile(fmt.Sprintf("%v/%v/%v/%v.yaml", location, scheme, c.Parts[0], c.Parts[0])) // TODO move to man
-			if err != nil {
-				return carapace.ActionMessage(err.Error())
+			if uids, err := man.UidsFromDBs(scheme, c.Parts[0]); err == nil {
+				for _, uid := range uids {
+					key := strings.TrimPrefix(uid.Path, "/")
+					if key != "" && !seen[key] {
+						seen[key] = true
+						vals = append(vals, key)
+					}
+				}
 			}
 
-			var entries map[string]string
-			if err := yaml.Unmarshal(content, &entries); err != nil {
-				return carapace.ActionMessage(err.Error())
-			}
-
-			vals := make([]string, 0, len(entries))
-			for key := range entries {
-				vals = append(vals, key)
-			}
+			sort.Strings(vals)
 			return carapace.ActionValues(vals...)
 		}
 
