@@ -71,6 +71,7 @@ func actionCmds() carapace.Action { // TODO include user specs
 				}
 			})
 		default:
+			hostPath := c.Parts[0]
 			return carapace.ActionMultiPartsN("=", 2, func(c carapace.Context) carapace.Action {
 				switch len(c.Parts) {
 				case 0:
@@ -78,7 +79,12 @@ func actionCmds() carapace.Action { // TODO include user specs
 				default:
 					switch c.Parts[0] {
 					case "flag":
-						return carapace.ActionValues("TODO") // TODO parse spec and return flags
+						host, subPath, _ := strings.Cut(hostPath, "/")
+						flags, err := man.CmdFlags(host, subPath)
+						if err != nil {
+							return carapace.ActionMessage(err.Error())
+						}
+						return carapace.ActionValues(flags...).Tag("flags")
 					default:
 						return carapace.ActionValues()
 					}
