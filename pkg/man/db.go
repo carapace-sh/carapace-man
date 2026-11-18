@@ -43,13 +43,15 @@ func indexKey(scheme, host string) string {
 // a (scheme, host) → dbPath index. Search paths are checked in priority order
 // (user config first, then system data dirs); within a path plain .db is
 // preferred over .db.gz for the same base name. First DB wins on conflicts.
+// The special base name "carapace" may contain any scheme; all other DBs are
+// treated as scheme-specific (only the scheme matching the base name).
 func buildHostIndex() (hostIndex, error) {
 	searchPaths, err := dbSearchPaths()
 	if err != nil {
 		return nil, err
 	}
 
-	var dbPaths []string
+	index := hostIndex{}
 	for _, sp := range searchPaths {
 		entries, err := os.ReadDir(sp)
 		if err != nil {
@@ -78,30 +80,31 @@ func buildHostIndex() (hostIndex, error) {
 				continue
 			}
 			seenBases[base] = true
-			dbPaths = append(dbPaths, filepath.Join(sp, name))
-		}
-	}
 
-	index := hostIndex{}
-	for _, dbPath := range dbPaths {
-		db, err := openReadDB(dbPath)
-		if err != nil {
-			continue
-		}
-		err = db.View(func(tx *bolt.Tx) error {
-			return tx.ForEach(func(schemeName []byte, schemeBucket *bolt.Bucket) error {
-				return schemeBucket.ForEachBucket(func(hostName []byte) error {
-					k := indexKey(string(schemeName), string(hostName))
-					if _, exists := index[k]; !exists {
-						index[k] = dbPath
+			dbPath := filepath.Join(sp, name)
+			db, err := openReadDB(dbPath)
+			if err != nil {
+				continue
+			}
+			err = db.View(func(tx *bolt.Tx) error {
+				return tx.ForEach(func(schemeName []byte, schemeBucket *bolt.Bucket) error {
+					scheme := string(schemeName)
+					if base != "carapace" && scheme != base {
+						return nil
 					}
-					return nil
+					return schemeBucket.ForEachBucket(func(hostName []byte) error {
+						k := indexKey(scheme, string(hostName))
+						if _, exists := index[k]; !exists {
+							index[k] = dbPath
+						}
+						return nil
+					})
 				})
 			})
-		})
-		db.Close()
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", dbPath, err)
+			db.Close()
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", dbPath, err)
+			}
 		}
 	}
 	return index, nil
@@ -227,15 +230,19 @@ func HostsFromDBs(scheme string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	hosts := make([]string, 0)
+	seen := map[string]bool{}
 	for k := range index {
 		s, h, ok := strings.Cut(k, "\x00")
 		if !ok {
 			continue
 		}
 		if s == scheme {
-			hosts = append(hosts, h)
+			seen[h] = true
 		}
+	}
+	hosts := make([]string, 0, len(seen))
+	for host := range seen {
+		hosts = append(hosts, host)
 	}
 	sort.Strings(hosts)
 	return hosts, nil

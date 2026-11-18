@@ -81,6 +81,9 @@ func CompileSpec(specPath, dbPath string, opts ...CompileOption) error {
 	if !isCommand {
 		return fmt.Errorf("%v: not a command spec (missing %v schema header); generic scheme docs must be compiled within their man directory tree", specPath, commandSchemaURL)
 	}
+	if err := validateCompileDBScheme(dbPath, "cmd"); err != nil {
+		return err
+	}
 	var cmd command.Command
 	if err := yaml.Unmarshal(content, &cmd); err != nil {
 		return err
@@ -100,6 +103,9 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 		return err
 	}
 	o := newCompileOptions(opts)
+	if err := validateCompileDBScheme(dbPath, "cmd"); err != nil {
+		return err
+	}
 	var cmd command.Command
 	if err := yaml.Unmarshal(content, &cmd); err != nil {
 		return err
@@ -108,6 +114,20 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 		host, _, _ = strings.Cut(cmd.Name, " ")
 	}
 	return compileCmd(cmd, host, dbPath, o)
+}
+
+func dbBaseName(dbPath string) string {
+	return strings.TrimSuffix(strings.TrimSuffix(filepath.Base(dbPath), ".gz"), ".db")
+}
+
+// validateCompileDBScheme enforces that non-special DBs only contain the scheme
+// corresponding to their base name. The "carapace" DB may contain any scheme.
+func validateCompileDBScheme(dbPath, scheme string) error {
+	base := dbBaseName(dbPath)
+	if base != "carapace" && base != scheme {
+		return fmt.Errorf("db %q may only contain scheme %q", filepath.Base(dbPath), base)
+	}
+	return nil
 }
 
 // CompileHostDir compiles all *.yaml split spec files in a directory into a
@@ -119,6 +139,9 @@ func CompileSpecReader(r io.Reader, host, dbPath string, opts ...CompileOption) 
 // name field if present.
 func CompileHostDir(hostDir, dbPath string, opts ...CompileOption) error {
 	o := newCompileOptions(opts)
+	if err := validateCompileDBScheme(dbPath, "cmd"); err != nil {
+		return err
+	}
 	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
 		return compileHostDirIntoDB(db, hostDir, o)
 	})
@@ -128,6 +151,9 @@ func CompileHostDir(hostDir, dbPath string, opts ...CompileOption) error {
 // If a value starts with "./", it's resolved as a file path relative to the YAML file's directory.
 func CompileStatic(yamlPath, scheme, host, dbPath string, opts ...CompileOption) error {
 	o := newCompileOptions(opts)
+	if err := validateCompileDBScheme(dbPath, scheme); err != nil {
+		return err
+	}
 	return withWritableDB(dbPath, o.amend, func(db *bolt.DB) error {
 		return compileStaticFileIntoDB(db, yamlPath, scheme, host, o)
 	})
@@ -148,6 +174,9 @@ func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
 				continue
 			}
 			scheme := entry.Name()
+			if err := validateCompileDBScheme(dbPath, scheme); err != nil {
+				return err
+			}
 			schemeDir := filepath.Join(manDir, scheme)
 
 			if scheme == "cmd" {

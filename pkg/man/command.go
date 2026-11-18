@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/carapace-sh/carapace/pkg/command"
@@ -77,4 +78,103 @@ func cmd(uid *url.URL) (string, error) {
 
 	return specCommand.Documentation.Command, nil
 
+}
+
+// CmdFlags returns known documentation flags for a cmd UID (cmd://host/sub/path).
+// Results are merged from compiled databases, user specs, and synced YAML specs.
+func CmdFlags(host, subPath string) ([]string, error) {
+	seen := map[string]bool{}
+
+	if uids, err := UidsFromDBs("cmd", host); err == nil {
+		for _, uid := range uids {
+			if strings.TrimPrefix(uid.Path, "/") != subPath {
+				continue
+			}
+			if q := uid.Query(); q.Has("flag") {
+				if flag := q.Get("flag"); flag != "" {
+					seen[flag] = true
+				}
+			}
+		}
+	}
+
+	if flags, err := cmdUserFlags(host, subPath); err == nil {
+		for _, flag := range flags {
+			seen[flag] = true
+		}
+	}
+
+	if flags, err := cmdRepoFlags(host, subPath); err == nil {
+		for _, flag := range flags {
+			seen[flag] = true
+		}
+	}
+
+	flags := make([]string, 0, len(seen))
+	for flag := range seen {
+		flags = append(flags, flag)
+	}
+	sort.Strings(flags)
+	return flags, nil
+}
+
+func cmdUserFlags(host, subPath string) ([]string, error) {
+	configDir, err := xdg.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	path := fmt.Sprintf("%v/carapace/specs/%v.yaml", configDir, host)
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var specCommand command.Command
+	if err := yaml.Unmarshal(content, &specCommand); err != nil {
+		return nil, err
+	}
+
+	cmd := &specCommand
+	if subPath != "" {
+		cmd, err = specCommand.Find(strings.Split(subPath, "/"))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	flags := make([]string, 0, len(cmd.Documentation.Flag))
+	for flag := range cmd.Documentation.Flag {
+		flags = append(flags, flag)
+	}
+	return flags, nil
+}
+
+func cmdRepoFlags(host, subPath string) ([]string, error) {
+	location, err := Location()
+	if err != nil {
+		return nil, err
+	}
+
+	subcommand := ""
+	if subPath != "" {
+		subcommand = "." + strings.ReplaceAll(subPath, "/", ".")
+	}
+	path := fmt.Sprintf("%v/%v/%v/%v.yaml", location, "cmd", host, MangleFilename(host+subcommand))
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var specCommand command.Command
+	if err := yaml.Unmarshal(content, &specCommand); err != nil {
+		return nil, err
+	}
+
+	flags := make([]string, 0, len(specCommand.Documentation.Flag))
+	for flag := range specCommand.Documentation.Flag {
+		flags = append(flags, flag)
+	}
+	return flags, nil
 }

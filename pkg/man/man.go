@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 
 	"charm.land/glamour/v2"
@@ -23,71 +24,112 @@ func Location() (string, error) {
 }
 
 func Schemes() ([]string, error) {
+	seen := map[string]bool{}
+
 	location, err := Location()
 	if err != nil {
 		return nil, err
 	}
+	if entries, err := os.ReadDir(location); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+				seen[entry.Name()] = true
+			}
+		}
+	}
 
-	entries, err := os.ReadDir(location)
+	dbSchemes, err := SchemesFromDBs()
 	if err != nil {
 		return nil, err
 	}
-
-	schemes := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
-			schemes = append(schemes, entry.Name())
-		}
+	for _, scheme := range dbSchemes {
+		seen[scheme] = true
 	}
+
+	schemes := make([]string, 0, len(seen))
+	for scheme := range seen {
+		schemes = append(schemes, scheme)
+	}
+	sort.Strings(schemes)
 	return schemes, nil
 }
 
 func Hosts(scheme string) ([]string, error) {
+	seen := map[string]bool{}
+
 	location, err := Location()
 	if err != nil {
 		return nil, err
 	}
+	if entries, err := os.ReadDir(fmt.Sprintf("%v/%v", location, scheme)); err == nil { // TODO prevent `..` and similar
+		for _, entry := range entries {
+			if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+				seen[entry.Name()] = true
+			}
+		}
+	}
 
-	entries, err := os.ReadDir(fmt.Sprintf("%v/%v", location, scheme)) // TODO prevent `..` and similar
+	dbHosts, err := HostsFromDBs(scheme)
 	if err != nil {
 		return nil, err
 	}
-
-	schemes := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
-			schemes = append(schemes, entry.Name())
-		}
+	for _, host := range dbHosts {
+		seen[host] = true
 	}
-	return schemes, nil
+
+	hosts := make([]string, 0, len(seen))
+	for host := range seen {
+		hosts = append(hosts, host)
+	}
+	sort.Strings(hosts)
+	return hosts, nil
 }
 
 func Uids(scheme, host string) ([]*url.URL, error) {
+	seen := map[string]bool{}
+	uids := make([]*url.URL, 0)
+
 	location, err := Location()
 	if err != nil {
 		return nil, err
 	}
+	if entries, err := os.ReadDir(fmt.Sprintf("%v/%v/%v", location, scheme, host)); err == nil { // TODO prevent `..` and similar
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") || !strings.HasPrefix(entry.Name(), host+".") {
+				continue
+			}
+			name := strings.TrimSuffix(entry.Name(), ".yaml")
+			name = strings.ReplaceAll(name, ".", "/")
+			name = fmt.Sprintf("%v://%v", scheme, name)
 
-	entries, err := os.ReadDir(fmt.Sprintf("%v/%v/%v", location, scheme, host)) // TODO prevent `..` and similar
+			uid, err := url.Parse(name)
+			if err != nil {
+				return nil, err
+			}
+			if !seen[uid.String()] {
+				seen[uid.String()] = true
+				uids = append(uids, uid)
+			}
+		}
+	}
+
+	dbUids, err := UidsFromDBs(scheme, host)
 	if err != nil {
 		return nil, err
 	}
-
-	uids := make([]*url.URL, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") || !strings.HasPrefix(entry.Name(), host+".") {
+	for _, uid := range dbUids {
+		if uid.RawQuery != "" {
 			continue
 		}
-		name := strings.TrimSuffix(entry.Name(), ".yaml")
-		name = strings.ReplaceAll(name, ".", "/")
-		name = fmt.Sprintf("%v://%v", scheme, name)
-
-		uid, err := url.Parse(name)
-		if err != nil {
-			return nil, err
+		if !seen[uid.String()] {
+			seen[uid.String()] = true
+			uids = append(uids, uid)
 		}
-		uids = append(uids, uid)
 	}
+
+	sort.Slice(uids, func(i, j int) bool {
+		return uids[i].String() < uids[j].String()
+	})
 	return uids, nil
 }
 
