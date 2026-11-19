@@ -23,6 +23,9 @@ Compile an entire man/ directory tree (man/cmd/<host>/*.yaml for the
 cmd scheme, <scheme>/<host>/<host>.yaml for generic schemes):
   carapace-man compile <man-dir> <output.db|.db.gz>
 
+Import hosts from a compiled database (.db or .db.gz):
+  carapace-man compile <source.db|.db.gz> <output.db|.db.gz>
+
 The database is rebuilt from scratch unless --amend is given, in which
 case processed hosts are replaced and others are preserved.`,
 	Args: cobra.ExactArgs(2),
@@ -43,6 +46,9 @@ case processed hosts are replaced and others are preserved.`,
 		}
 		if info.IsDir() {
 			return man.CompileManDir(source, dbPath, opts...)
+		}
+		if man.IsDBFile(source) {
+			return man.CompileDB(source, dbPath, opts...)
 		}
 		return man.CompileSpec(source, dbPath, opts...)
 	},

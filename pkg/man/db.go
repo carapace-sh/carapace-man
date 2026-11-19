@@ -59,7 +59,7 @@ func buildHostIndex() (hostIndex, error) {
 		// prefer plain .db over .db.gz for the same base name in a search path
 		names := make([]string, 0, len(entries))
 		for _, entry := range entries {
-			if entry.IsDir() || !isDBFile(entry.Name()) {
+			if entry.IsDir() || !IsDBFile(entry.Name()) {
 				continue
 			}
 			names = append(names, entry.Name())

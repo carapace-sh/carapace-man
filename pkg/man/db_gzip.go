@@ -20,8 +20,8 @@ func isGzipDB(path string) bool {
 	return strings.HasSuffix(path, ".db.gz")
 }
 
-// isDBFile reports whether a path is a supported database file (.db or .db.gz).
-func isDBFile(name string) bool {
+// IsDBFile reports whether a path is a supported database file (.db or .db.gz).
+func IsDBFile(name string) bool {
 	return strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".db.gz")
 }
 
