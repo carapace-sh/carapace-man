@@ -188,6 +188,48 @@ func CompileManDir(manDir, dbPath string, opts ...CompileOption) error {
 	})
 }
 
+// CompileDB imports all hosts from a compiled bbolt database into another.
+// Source databases (.db or .db.gz) are read read-only. Imported hosts replace
+// existing hosts with the same scheme and name; other hosts are preserved when
+// compiling with --amend.
+func CompileDB(srcDB, dstDB string, opts ...CompileOption) error {
+	o := newCompileOptions(opts)
+	src, err := openReadDB(srcDB)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	return withWritableDB(dstDB, o.amend, func(dst *bolt.DB) error {
+		return dst.Update(func(dstTx *bolt.Tx) error {
+			return src.View(func(srcTx *bolt.Tx) error {
+				return srcTx.ForEach(func(schemeName []byte, srcScheme *bolt.Bucket) error {
+					dstScheme, err := dstTx.CreateBucketIfNotExists(schemeName)
+					if err != nil {
+						return err
+					}
+					return srcScheme.ForEachBucket(func(hostName []byte) error {
+						dstHost, err := createHostBucket(dstScheme, string(hostName), o)
+						if err != nil {
+							return err
+						}
+						srcHost := srcScheme.Bucket(hostName)
+						if srcHost == nil {
+							return nil
+						}
+						return srcHost.ForEach(func(k, v []byte) error {
+							if v == nil {
+								return nil
+							}
+							return dstHost.Put(k, v)
+						})
+					})
+				})
+			})
+		})
+	})
+}
+
 func compileHostDirIntoDB(db *bolt.DB, hostDir string, o compileOptions) error {
 	host := filepath.Base(hostDir)
 	entries, err := os.ReadDir(hostDir)
